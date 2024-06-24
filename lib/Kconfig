@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "bme68x-sensor-api/Kconfig"
+rsource "bsec/Kconfig"
+rsource "bme68x-iaq/Kconfig"

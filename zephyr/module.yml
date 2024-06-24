@@ -1,0 +1,93 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: bme68x
+
+build:
+  cmake: .
+  kconfig: Kconfig
+  settings:
+    dts_root: .
+blobs:
+  # Cortex-M3
+  - path: bsec/cortex-m3/libalgobsec.a
+    sha256: bbe4a40049d40ebc8b9c0ce3d3605094399cffe4a4b66527be11242ca1010a3d
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for Cortex-M3"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/cortex-m3/libalgobsec.a
+  # Cortex-M33
+  - path: bsec/cortex-m33/libalgobsec.a
+    sha256: edcb58e1c20bf00fb04020642e2243a8a56d1a4172c1ac4139309a23e4965b21
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for Cortex-M3"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/cortex-m33/libalgobsec.a
+  # Cortex-M33F
+  - path: bsec/cortex-m33f/libalgobsec.a
+    sha256: dc7d6a7b6eeae2b37deb273b7ab2b9558cdd43a88f225aa52ddfdeef6c33ec40
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for Cortex-M33F"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/cortex-m33/fpv5-sp-d16-hard/libalgobsec.a
+  # Cortex-M4
+  - path: bsec/cortex-m4/libalgobsec.a
+    sha256: fa5fe69e89c75c23975d104aa061ddcc36b72b31a570fbeca9bceed0895cb998
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for Cortex-M4"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/cortex-m4/libalgobsec.a
+  # Cortex-M4F
+  - path: bsec/cortex-m4f/libalgobsec.a
+    sha256: f2d7bfe4b3dd7055cfab9dc6872b4472c2753cc3ed093f24922bc7b404406ed9
+    type: lib
+    version: "2.5.0.2"
+    license-path: blobs/bsec2/license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for Cortex-M4F"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/cortex-m4/fpv4-sp-d16-hard/libalgobsec.a
+  # ESP32
+  - path: bsec/esp32/libalgobsec.a
+    sha256: 10a1438a6696e02201a4de11bbfbe90263886ad0ff03923bca56c41b40bd1b2a
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for ESP32"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/esp32/libalgobsec.a
+  # ESP32S2
+  - path: bsec/esp32s2/libalgobsec.a
+    sha256: 154ef6b80a2ff50e7d8f9d9ce571207ca9d8ec8e7b863547f129efde6262c455
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for ESP32S2"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/esp32s2/libalgobsec.a
+  # ESP32S3
+  - path: bsec/esp32s3/libalgobsec.a
+    sha256: e5530529a9c26ad0e76c2ac9478549cfa343877fabbeb269264eaa2762331d77
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for ESP32S3"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/esp32s3/libalgobsec.a
+  # ESP32C3
+  - path: bsec/esp32c3/libalgobsec.a
+    sha256: c8e36ac413cd00f0f205abbfef6cf400bb986aff5b77dac5410ba5fb2130d770
+    type: lib
+    version: "2.5.0.2"
+    license-path: license_terms_bme688_bme680_bsec.pdf
+    description: "BSEC library for ESP32C3"
+    doc-url: https://github.com/boschsensortec/Bosch-BSEC2-Library
+    url: https://github.com/boschsensortec/Bosch-BSEC2-Library/raw/v1.7.2502/src/esp32c3/libalgobsec.a

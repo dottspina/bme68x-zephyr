@@ -1,0 +1,183 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "BME68X Sample - TPHG"
+
+config BME68X_TPHG_AMBIENT_TEMP
+	int "Expected ambient temperature (degree Celsius)"
+	default 25
+	help
+	  Initial value of the estimated ambient temperature
+	  used to compute heater resistance.
+
+choice
+	prompt "Temperature oversampling"
+	default BME68X_TPHG_TEMP_OS_2X
+	help
+	  Select temperature oversampling for the BME68X sensor.
+	  Higher values reduce noise but lead to higher power consumption.
+
+config BME68X_TPHG_TEMP_OS_1X
+	bool "x1"
+config BME68X_TPHG_TEMP_OS_2X
+	bool "x2"
+config BME68X_TPHG_TEMP_OS_4X
+	bool "x4"
+config BME68X_TPHG_TEMP_OS_8X
+	bool "x8"
+config BME68X_TPHG_TEMP_OS_16X
+	bool "x16"
+config BME68X_TPHG_TEMP_OS_NONE
+	bool "Off"
+	help
+	  Switch off measurement
+endchoice # "Temperature oversampling"
+
+choice
+	prompt "Pressure oversampling"
+	default BME68X_TPHG_PRESS_OS_16X
+	help
+	  Select pressure oversampling for the BME68X sensor.
+	  Higher values reduce noise but lead to higher power consumption.
+
+config BME68X_TPHG_PRESS_OS_1X
+	bool "x1"
+config BME68X_TPHG_PRESS_OS_2X
+	bool "x2"
+config BME68X_TPHG_PRESS_OS_4X
+	bool "x4"
+config BME68X_TPHG_PRESS_OS_8X
+	bool "x8"
+config BME68X_TPHG_PRESS_OS_16X
+	bool "x16"
+config BME68X_TPHG_PRESS_OS_NONE
+	bool "Off"
+	help
+	  Switch off measurement
+endchoice # "Pressure oversampling"
+
+choice
+	prompt "Humidity oversampling"
+	default BME68X_TPHG_HUM_OS_1X
+	help
+	  Select humidity oversampling for the BME68X sensor.
+	  Higher values reduce noise but lead to higher power consumption.
+
+config BME68X_TPHG_HUM_OS_1X
+	bool "x1"
+config BME68X_TPHG_HUM_OS_2X
+	bool "x2"
+config BME68X_TPHG_HUM_OS_4X
+	bool "x4"
+config BME68X_TPHG_HUM_OS_8X
+	bool "x8"
+config BME68X_TPHG_HUM_OS_16X
+	bool "x16"
+config BME68X_TPHG_HUM_OS_NONE
+	bool "Off"
+	help
+	  Switch off measurement
+endchoice # "Humidity oversampling"
+
+choice
+	prompt "IIR filter coefficient"
+	default BME68X_TPHG_FILTER_OFF
+	help
+      Use the FILTER_FILTER filter to suppress short-term changes (e.g. slamming of door
+	  or wind blowing into the sensor) in the environment.
+
+	  The FILTER_FILTER effectively reduces the bandwidth of the temperature and pressure
+	  output signals and increases the resolution of the output data to 20 bit,
+	  noting that the humidity and gas values inside the sensor does not
+	  fluctuate rapidly and does not require low pass filtering.
+
+config BME68X_TPHG_FILTER_OFF
+	bool "Filter off"
+config BME68X_TPHG_FILTER_2
+	bool "2"
+config BME68X_TPHG_FILTER_4
+	bool "4"
+config BME68X_TPHG_FILTER_8
+	bool "8"
+config BME68X_TPHG_FILTER_16
+	bool "16"
+config BME68X_TPHG_FILTER_32
+	bool "32"
+config BME68X_TPHG_FILTER_64
+	bool "64"
+config BME68X_TPHG_FILTER_128
+	bool "128"
+endchoice # "IIR filter coefficient"
+
+choice
+	prompt "Gas Sensor"
+	default BME68X_TPHG_HEATR_LP
+	help
+	  Enable gas sensor (gas resistance measurements)
+	  and configure heating profile for LP or ULP mode.
+
+config BME68X_TPHG_HEATR_LP
+	bool "Low Power (LP)"
+	help
+	  Low power (LP) mode is designed for interactive applications
+	  where the air quality is tracked and observed at a higher update rate
+	  of 3 seconds with a current consumption of <1 mA.
+
+	  The corresponding heating profile is:
+	  - temperature set-point: 320 degC
+	  - heating duration: 197 ms
+
+config BME68X_TPHG_HEATR_ULP
+	bool "Ultra Low Power (ULP)"
+	help
+	  Ultra low power (ULP) mode is designed for battery-powered and/or
+	  frequency-coupled devices over extended periods of time.
+	  This mode features an update rate of 300 seconds
+	  and an average current consumption of <0.1 mA.
+
+	  The corresponding heating profile is:
+	  - temperature set-point: 400 degC
+	  - heating duration: 1943 ms
+
+config BME68X_TPHG_HEATR_NONE
+	bool "Off"
+	help
+	  Switch off gas measurement.
+endchoice # "Gas Sensor"
+config BME68X_TPHG_HEATR_TEMP
+	int
+	# Values from Zephyr driver for "bosch,bme680" compatible devices.
+	default 320 if BME68X_TPHG_HEATR_LP
+	default 400 if BME68X_TPHG_HEATR_ULP
+	default 0 if BME68X_TPHG_HEATR_NONE
+config BME68X_TPHG_HEATR_DUR
+	int
+	# Values from Zephyr driver for "bosch,bme680" compatible devices.
+	default 197 if BME68X_TPHG_HEATR_LP
+	default 1943 if BME68X_TPHG_HEATR_ULP
+	default 0 if BME68X_TPHG_HEATR_NONE
+
+config BME68X_TPHG_SAMPLE_RATE
+	int "Measurements period (seconds)"
+	default 3 if BME68X_TPHG_HEATR_LP
+	default 300 if BME68X_TPHG_HEATR_ULP
+	default 60 if BME68X_TPHG_HEATR_NONE
+	help
+	  Waiting time between each measurement in seconds.
+
+	  ULP mode is designed for a sample rate of around 300 seconds.
+
+	  LP mode is designed for interactive applications
+	  and supports a higher sample rate of 3 seconds.
+
+	  Default to one minute if gas measurements are disabled.
+
+
+module = BME68X_SAMPLE
+module-str = app
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu # "BME68X Sample - TPHG"
+
+source "Kconfig.zephyr"

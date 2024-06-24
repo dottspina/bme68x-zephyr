@@ -1,0 +1,148 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BME68X_IAQ
+	bool "Support library for BSEC IAQ"
+	depends on BSEC
+	depends on BME68X_SENSOR_API
+	help
+	  Enable support library for Index for Air Quality (IAQ)
+	  with Bosch Sensortec Environmental Cluster (BSEC)
+	  and the BME68X Sensor API.
+
+if BME68X_IAQ
+
+config BME68X_IAQ_AMBIENT_TEMP
+	int "Expected ambient temperature"
+	default 20
+	help
+	  Initial ambient temperature used to computer heater resistance
+	  in degree Celsius.
+
+config BME68X_IAQ_NVS
+	bool "Non Volatile Storage"
+	depends on NVS
+	help
+	  Enable support for BSEC state persistence to Flash storage with NVS.
+
+	  When this NVS support is enabled, the library will always try
+	  to load a saved BSEC state during its initialization,
+	  regardless of BME68X_IAQ_STATE_SAVE_INTVL.
+
+config BME68X_IAQ_STATE_SAVE_INTVL
+	int "BSEC state save interval"
+	depends on BME68X_IAQ_NVS
+	default 1440
+	help
+	  When the Non Volatile Storage support is available,
+	  this library's IAQ control loop will periodically save
+	  the BSEC algorithm state to flash memory.
+
+	  This is the periodicity in minutes,
+	  e.g. 1440 to save the algorthim state once a day.
+
+	  Set this option to zero to disable periodic BSEC state persistence.
+
+menu "IAQ configuration"
+
+choice
+	prompt "Sample rate"
+	default BME68X_IAQ_SAMPLE_RATE_LP
+	help
+	  BSEC sensors sample rate.
+
+	config BME68X_IAQ_SAMPLE_RATE_LP
+		bool "1/3 Hz (LP)"
+		help
+		  Low Power mode.
+
+	  	  Low power (LP) mode is designed for interactive applications
+	  	  where the air quality is tracked and observed at a higher update rate
+	  	  of 3 seconds with a current consumption of <1 mA.
+
+
+	config BME68X_IAQ_SAMPLE_RATE_ULP
+		bool "1/300 Hz (ULP)"
+		help
+		  Ultra Low Power mode.
+
+	  	  Ultra low power (ULP) mode is designed for battery-powered and/or
+	  	  frequency-coupled devices over extended periods of time.
+		  This mode features an update rate of 300 seconds
+	  	  and an average current consumption of <0.1 mA.
+
+endchoice
+config BME68X_IAQ_SAMPLE_RATE
+	 string
+	 default "300s" if BME68X_IAQ_SAMPLE_RATE_ULP
+	 default "3s" if BME68X_IAQ_SAMPLE_RATE_LP
+
+choice
+	prompt "Supply voltage"
+	default BME68X_IAQ_33V
+
+config BME68X_IAQ_33V
+	bool "3.3 V"
+config BME68X_IAQ_18V
+	bool "1.8 V"
+
+endchoice # "Supply voltage"
+config BME68X_IAQ_VDD
+	 string
+	 default "33v" if BME68X_IAQ_33V
+	 default "18v" if BME68X_IAQ_18V
+
+choice
+	prompt "Calibration time"
+	default BME68X_IAQ_4D
+
+config BME68X_IAQ_4D
+	bool "4 days"
+config BME68X_IAQ_28D
+	bool "28 days"
+
+endchoice # "Calibrarion time"
+config BME68X_IAQ_CALIB_TIME
+	 string
+	 default "4d" if BME68X_IAQ_4D
+	 default "28d" if BME68X_IAQ_28D
+
+endmenu # "IAQ configuration"
+
+choice BME68X_IAQ_LOG_LEVEL_CHOICE
+	prompt "Max compiled-in log level"
+	default BME68X_IAQ_LOG_LEVEL_DEFAULT
+	depends on LOG
+
+config BME68X_IAQ_LOG_LEVEL_OFF
+	bool "Off"
+
+config BME68X_IAQ_LOG_LEVEL_ERR
+	bool "Error"
+
+config BME68X_IAQ_LOG_LEVEL_WRN
+	bool "Warning"
+
+config BME68X_IAQ_LOG_LEVEL_INF
+	bool "Info"
+
+config BME68X_IAQ_LOG_LEVEL_DBG
+	bool "Debug"
+
+config BME68X_IAQ_LOG_LEVEL_DEFAULT
+	bool "Default"
+
+endchoice
+
+config BME68X_IAQ_LOG_LEVEL
+	int
+	depends on LOG
+	default 0 if BME68X_IAQ_LOG_LEVEL_OFF
+	default 1 if BME68X_IAQ_LOG_LEVEL_ERR
+	default 2 if BME68X_IAQ_LOG_LEVEL_WRN
+	default 3 if BME68X_IAQ_LOG_LEVEL_INF
+	default 4 if BME68X_IAQ_LOG_LEVEL_DBG
+	default LOG_DEFAULT_LEVEL if BME68X_IAQ_LOG_LEVEL_DEFAULT
+
+endif # BME68X_IAQ

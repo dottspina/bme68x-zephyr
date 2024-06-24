@@ -1,0 +1,26 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BME68X_SENSOR_API
+	bool "BME68X Sensor API"
+	help
+	  Enable Bosch Sensortec's BME68X Sensor API library.
+
+	  Version 4.4.8.
+
+	  Copyright (c) 2023 Bosch Sensortec GmbH. All rights reserved.
+	  License: BSD-3-Clause
+
+	  See https://github.com/boschsensortec/BME68x_SensorAPI
+
+if BME68X_SENSOR_API
+
+config BME68X_SENSOR_API_FLOAT
+	bool "Floating point API"
+	help
+	  Enable the floating-point variant of the BME68X Sensor API.
+
+	  Do not confuse with using hardware FPU and floating-point ABI.
+
+endif # BME68X_SENSOR_API

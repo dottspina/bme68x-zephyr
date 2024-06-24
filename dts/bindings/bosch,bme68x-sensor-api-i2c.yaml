@@ -1,0 +1,13 @@
+# Copyright (c) 2024, Chris Duf
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    BME680/688 are integrated environmental sensors that measure
+    temperature, pressure, humidity and air quality.
+
+    Compatible devices support Bosch Sensortec's BME68X Sensor API
+    instead of Zephyr Sensor API.
+
+compatible: "bosch,bme68x-sensor-api"
+
+include: [sensor-device.yaml, i2c-device.yaml]

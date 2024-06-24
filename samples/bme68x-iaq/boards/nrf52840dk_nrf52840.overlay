@@ -1,0 +1,33 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Example DTS overlay with a single BME680/688 device
+ * connected to I2C and a flash partition dedicated
+ * to BSEC state persistence.
+ */
+
+&i2c0 {
+	bme680@76 {
+		compatible = "bosch,bme68x-sensor-api";
+		reg = <0x76>;
+	};
+};
+
+/*
+ * WARNING: this may erase or currupt existing data
+ * on the "storage" partition.
+ */
+/delete-node/ &storage_partition;
+ &flash0 {
+	partitions {
+		/* Resize "storage" partition */
+        storage_partition: partition@f8000 {
+            label = "storage";
+            reg = < 0xf8000 0x6000 >;
+        };
+		/* Partition for BSEC state persistence (NVS). */
+        bsec_partition: partition@fe000 {
+            reg = < 0xfe000 0x2000 >;
+        };
+	};
+};

@@ -1,0 +1,58 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BME68X_SENSOR_API_DRIVER
+	bool "BME68X Sensor API (Driver)"
+	default y if DT_HAS_BOSCH_BME68X_SENSOR_API_ENABLED
+	select BME68X_SENSOR_API
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME68X_SENSOR_API),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME68X_SENSOR_API),spi)
+	help
+	  Bosch Sensortec BME68X Sensor API integration with Zephyr-RTOS.
+
+	  Bind Zephyr devices with "bosch,bme68x-sensor-api" bindings
+	  to BME68X Sensor API sensors.
+
+if BME68X_SENSOR_API_DRIVER
+
+config BME68X_SENSOR_API_DRIVER_INIT_PRIORITY
+	int "Relative initialization priority"
+	default 99
+	help
+	   Within each initialization level you may specify a priority level,
+ 	   relative to other devices in the same initialization level.
+ 	   The priority level is specified as an integer value in the range 0 to 99;
+ 	   lower values indicate earlier initialization.
+
+choice BME68X_SENSOR_API_DRIVER_LOG_LEVEL_CHOICE
+	prompt "Max compiled-in log level"
+	default BME68X_SENSOR_API_DRIVER_LOG_LEVEL_DEFAULT
+	depends on LOG
+
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL_OFF
+	bool "Off"
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL_ERR
+	bool "Error"
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL_WRN
+	bool "Warning"
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL_INF
+	bool "Info"
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL_DBG
+	bool "Debug"
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL_DEFAULT
+	bool "Default"
+
+endchoice
+
+config BME68X_SENSOR_API_DRIVER_LOG_LEVEL
+	int
+	depends on LOG
+	default 0 if BME68X_SENSOR_API_DRIVER_LOG_LEVEL_OFF
+	default 1 if BME68X_SENSOR_API_DRIVER_LOG_LEVEL_ERR
+	default 2 if BME68X_SENSOR_API_DRIVER_LOG_LEVEL_WRN
+	default 3 if BME68X_SENSOR_API_DRIVER_LOG_LEVEL_INF
+	default 4 if BME68X_SENSOR_API_DRIVER_LOG_LEVEL_DBG
+	default LOG_DEFAULT_LEVEL if BME68X_SENSOR_API_DRIVER_LOG_LEVEL_DEFAULT
+
+endif # BME68X_SENSOR_API_DRIVER

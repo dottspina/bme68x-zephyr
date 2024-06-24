@@ -1,0 +1,35 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BSEC
+	bool "Bosch Sensortec Environmental Cluster (BSEC)"
+	help
+	  Enable Bosch Sensortec Environmental Cluster (BSEC) library.
+
+	  Header files and static libraries for Bosch Sensortec Environmental Cluster
+	  (BSEC) Version 2.5.0.2.
+
+	  License:
+	  - library binaries (libalgobsec): Terms and Conditions for the use
+	    of Bosch Sensortec’s BME680/BME688 Software
+	  - C headers and configuration files: BSD-3-Clause license
+
+	  See:
+	  - https://www.bosch-sensortec.com/software-tools/software/bme680-software-bsec/
+	  - https://github.com/boschsensortec/Bosch-BSEC2-Library/blob/master/LICENSE.md
+
+# $ZEPHYR_BASE/cmake/modules/extensions.cmake:
+#
+# Zephyr libraries must explicitly call
+# zephyr_library_link_libraries(<interface_library>) to use this build
+# information. 'app' is treated as a special case for usability
+# reasons; a Kconfig option (CONFIG_APP_LINK_WITH_<interface_library>)
+# should exist for each interface_library and will determine if 'app'
+# links with the interface_library.
+config APP_LINK_WITH_BSEC
+	bool
+	depends on BSEC
+	default y
+	help
+	  Link Zephyr application with BSEC2 library.

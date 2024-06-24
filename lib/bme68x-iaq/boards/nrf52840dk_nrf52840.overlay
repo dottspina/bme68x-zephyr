@@ -1,0 +1,24 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Example DTS overlay for resizing the "storage" partition.
+ */
+
+/*
+ * WARNING: this may erase or currupt existing data
+ * on the "storage" partition.
+ */
+/delete-node/ &storage_partition;
+ &flash0 {
+	partitions {
+		/* Resize "storage" partition */
+        storage_partition: partition@f8000 {
+            label = "storage";
+            reg = < 0xf8000 0x6000 >;
+        };
+		/* Partition for BSEC state persistence (NVS). */
+        bsec_partition: partition@fe000 {
+            reg = < 0xfe000 0x2000 >;
+        };
+	};
+};
