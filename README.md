@@ -64,7 +64,7 @@ The driver and support libraries are provided by the [Zephyr Module] `bme68x`, w
 We assume a Zephyr command line development environment managed by [West] ([Workspaces]), installed e.g. following the Zephyr [Getting Started Guide]:
 
 ```
-zephyrproject/
+zephyr-project/
 ├── bootloader/
 │   └── mcuboot/
 ├── modules/
@@ -79,7 +79,7 @@ zephyrproject/
     └── west.yml
 ```
 
-Add an external project entry at the end of the workspace [manifest] (`zephyrproject/zephyr/west.yml`), e.g.:
+Add an external project entry at the end of the workspace [manifest] (`zephyr-project/zephyr/west.yml`), e.g.:
 
 ``` yml
 projects:
@@ -108,7 +108,7 @@ From github.com:dottspina/bme68x-zephyr
  * branch            main       -> FETCH_HEAD
 ```
 
-The module `bme68x` should now be installed in `zephyrproject/modules/lib/bme68x`.
+The module `bme68x` should now be installed in `zephyr-project/modules/lib/bme68x`.
 
 > [!TIP]
 >
@@ -229,15 +229,15 @@ This sample application depends on the BSEC library. If not already installed:
 
 ```
 $ west blobs fetch bme68x
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m3/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m33/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m33f/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m4/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m4f/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/esp32/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/esp32s2/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/esp32s3/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec/esp32c3/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m3/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m33/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m33f/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m4/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m4f/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32s2/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32s3/libalgobsec.a
+Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32c3/libalgobsec.a
 ```
 
 [`west blobs`]: https://docs.zephyrproject.org/latest/develop/west/zephyr-cmds.html#west-blobs

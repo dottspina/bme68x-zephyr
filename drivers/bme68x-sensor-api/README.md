@@ -47,7 +47,7 @@ Compatible devices (see [Compatible Devices](#compatible-devices)) are intended 
 #include "bme68x.h"
 
 /* Compatible device driver instance (see Devicetree HOWTOs). */
-static struct device const *const dev = DEVICE_DT_GET_ONE(bosch_bme68x_api);
+static struct device const *const dev = DEVICE_DT_GET_ONE(bosch_bme68x_sensor_api);
 
 /* BME68X Sensor API sensor. */
 static struct bme68x_dev bme68x_dev;

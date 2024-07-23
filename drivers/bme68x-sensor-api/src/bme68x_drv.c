@@ -185,5 +185,5 @@ int z_vrfy_bme68x_sensor_api_check(struct device const *dev)
 	DEVICE_DT_INST_DEFINE(inst, bme68x_drv_init, NULL, NULL, &bme68x_drv_config_##inst,        \
 			      POST_KERNEL, BME68X_SENSOR_API_DRIVER_INIT_PRIORITY, NULL);
 
-/* Create driver instances for enabled compatible device. */
+/* Create driver instances for enabled compatible devices. */
 DT_INST_FOREACH_STATUS_OKAY(BME68X_DRV_DEFINE)
