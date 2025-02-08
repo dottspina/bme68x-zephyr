@@ -108,16 +108,11 @@ sleep_forever:
 	return 0;
 }
 
-static inline void fixed_point_init(float const x, ssize_t const precision,
+static inline void fixed_point_init(float x, unsigned int precision,
 				    struct fixed_point *fixed_point)
 {
-	int32_t x_scaled = x * precision;
-	fixed_point->q = x_scaled / precision;
-	if (fixed_point->q < 0) {
-		fixed_point->r = (fixed_point->q * precision) - x_scaled;
-	} else {
-		fixed_point->r = x_scaled - (fixed_point->q * precision);
-	}
+	fixed_point->q = (x / precision) * precision;
+	fixed_point->r = (x - fixed_point->q) * precision * (fixed_point->q < 0 ? -1 : 1);
 }
 
 static void iaq_output_init(struct bme68x_iaq_sample const *iaq_sample,
