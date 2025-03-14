@@ -11,6 +11,7 @@
 
 #include "bme68x.h"
 #include "bsec_interface.h"
+
 /*
  * Selected (Kconfig) BSEC algorithm configuration for IAQ.
  *
@@ -19,11 +20,6 @@
  * NOTE: Typical configuration is just over 2 kB.
  */
 #include "bsec_iaq.h"
-
-/* API will return -ENOSYS if NVS support is disabled. */
-#include "bme68x_iaq_nvs.h"
-
-LOG_MODULE_REGISTER(bme68x_iaq, CONFIG_BME68X_IAQ_LOG_LEVEL);
 
 /*
  * Sample rate of the BSEC virtual sensor:
@@ -42,31 +38,52 @@ LOG_MODULE_REGISTER(bme68x_iaq, CONFIG_BME68X_IAQ_LOG_LEVEL);
  */
 #define BME68X_IAQ_AMBIENT_TEMP INT8_C(CONFIG_BME68X_IAQ_AMBIENT_TEMP)
 
-#if defined(CONFIG_BME68X_IAQ_STATE_SAVE_INTVL) && (CONFIG_BME68X_IAQ_STATE_SAVE_INTVL > 0)
-/* BSEC state saves periodicity in minutes. */
-#define BME68X_IAQ_STATE_SAVE_INTVL CONFIG_BME68X_IAQ_STATE_SAVE_INTVL
-/*
- * Dedicated timer:
- * - started just before entering the BSEC control loop
- * - then managed by iaq_bsec_save_state() bellow
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
+/* BSEC state persistence to per-device settings. */
+#include "bme68x_iaq_settings.h"
+
+/* BSEC state saves periodicity in minutes, zero means disabled.
+ * Dismiss any negative interval from invalid configuration.
  */
-K_TIMER_DEFINE(iaq_state_save_timer, NULL, NULL);
+static int iaq_state_saves_intvl = CONFIG_BME68X_IAQ_STATE_SAVE_INTVL > 0
+					   ? CONFIG_BME68X_IAQ_STATE_SAVE_INTVL
+					   : 0;
+
+/* Should we delete any previously saved BSEC state on reset ? */
+#ifdef CONFIG_BME68X_IAQ_RST_SAVED_STATE
+#define IAQ_RST_SAVED_STATE 1
+#else
+#define IAQ_RST_SAVED_STATE 0
+#endif
+
 /*
- * BSEC state persistence:
- * - save state to flash storage (NVS)
- * - restart timer on success
- * - stop timer on first error
+ * Retrieve BSEC state from saved settings, if available.
  *
- * Called periodically by the IAQ control loop
- * when the NVS support is enabled
- * and the saves periodicity is non-zero.
+ * Returns 0 on success, -ENOENT if no saved state available,
+ * other non zero values on error.
+ */
+static int iaq_bsec_load_state(void);
+
+/*
+ * BSEC state persistence to per-device settings:
+ * - save settings for BSEC state
+ * - restart timer on success, disable periodic saves on error
+ *
+ * Called periodically by the IAQ control loop.
  */
 static void iaq_bsec_save_state(void);
 
-#else
-/* No periodic BSEC state persistence. */
-#define BME68X_IAQ_STATE_SAVE_INTVL 0
-#endif
+/* Delete BSEC state from settings. */
+static void iaq_bsec_delete_state(void);
+
+/*
+ * Dedicated timer:
+ * - started just before entering the BSEC control loop
+ * - then managed by iaq_bsec_save_state()
+ */
+K_TIMER_DEFINE(iaq_state_save_timer, NULL, NULL);
+
+#endif /* CONFIG_BME68X_IAQ_SETTINGS */
 
 /*
  *  Configure the BSEC algorithm for IAQ.
@@ -89,14 +106,6 @@ static bsec_library_return_t iaq_bsec_configure(void);
  * Returns 0 on success, BSEC status otherwise.
  */
 static bsec_library_return_t iaq_bsec_subscribe(void);
-
-/*
- * Load saved BSEC state from NVS, if available.
- *
- * Returns 0 on success, -ENOENT if no saved state available,
- * -EIO on NVS error, BSEC status code otherwise.
- */
-static int iaq_bsec_load_state(void);
 
 /*
  * Trigger the TPHG measurements requested by the BSEC control loop:
@@ -239,6 +248,8 @@ static bsec_sensor_configuration_t const iaq_virt_sensors[] = {
 	},
 };
 
+LOG_MODULE_REGISTER(bme68x_iaq, CONFIG_BME68X_IAQ_LOG_LEVEL);
+
 int bme68x_iaq_init(void)
 {
 	bsec_version_t ver;
@@ -257,21 +268,19 @@ int bme68x_iaq_init(void)
 		return ret;
 	}
 
-	if (BME68X_IAQ_NVS_ENABLED) {
-		ret = bme68x_iaq_nvs_init();
-		if (!ret) {
-			if (BME68X_IAQ_STATE_SAVE_INTVL) {
-				LOG_INF("BSEC state save period: %u min",
-					BME68X_IAQ_STATE_SAVE_INTVL);
-			}
-
-			ret = iaq_bsec_load_state();
-		}
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
+	/* On startup, try to either reset or load any previously saved BSEC state,
+	 * according to configuration. */
+	if (IAQ_RST_SAVED_STATE) {
+		iaq_bsec_delete_state();
+	} else {
+		ret = iaq_bsec_load_state();
 
 		if (ret && (ret != -ENOENT)) {
 			return ret;
 		}
 	}
+#endif /* CONFIG_BME68X_IAQ_SETTINGS */
 
 	ret = iaq_bsec_subscribe();
 	return ret;
@@ -284,10 +293,16 @@ void bme68x_iaq_run(struct bme68x_dev *dev, bme68x_iaq_output_cb iaq_output_hand
 	/* Initialize temperature used to compute heater resistance. */
 	dev->amb_temp = BME68X_IAQ_AMBIENT_TEMP;
 
-#if BME68X_IAQ_STATE_SAVE_INTVL
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
 	/* Enable periodic BSEC state persistence. */
-	k_timer_start(&iaq_state_save_timer, K_MINUTES(BME68X_IAQ_STATE_SAVE_INTVL), K_NO_WAIT);
-#endif
+	if (iaq_state_saves_intvl > 0) {
+		k_timer_start(&iaq_state_save_timer, K_MINUTES(iaq_state_saves_intvl), K_NO_WAIT);
+
+		LOG_INF("BSEC state save period: %d min", iaq_state_saves_intvl);
+	} else {
+		LOG_INF("BSEC state periodic saves disabled");
+	}
+#endif /* CONFIG_BME68X_IAQ_SETTINGS */
 
 	/*
 	 * Run the algorithm until negative BME68X Sensor API/BSEC status code.
@@ -360,12 +375,13 @@ void bme68x_iaq_run(struct bme68x_dev *dev, bme68x_iaq_output_cb iaq_output_hand
 			dev->amb_temp = (int8_t)iaq_sample.temperature;
 		}
 
-#if BME68X_IAQ_STATE_SAVE_INTVL
-		if (!k_timer_remaining_get(&iaq_state_save_timer)) {
-			/* Save state to NVS and restart timer on success. */
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
+		if ((iaq_state_saves_intvl > 0) && !k_timer_remaining_get(&iaq_state_save_timer)) {
+			/* Save state to settings, reset timer on success,
+			 * disable periodic saves on error. */
 			iaq_bsec_save_state();
 		}
-#endif
+#endif /* CONFIG_BME68X_IAQ_SETTINGS */
 
 	iaq_loop_next:
 		/* Non recoverable error, exit IAQ loop immediately. */
@@ -378,7 +394,7 @@ void bme68x_iaq_run(struct bme68x_dev *dev, bme68x_iaq_output_cb iaq_output_hand
 		k_sleep(K_NSEC(next_rdv_ns));
 	}
 
-#if BME68X_IAQ_STATE_SAVE_INTVL
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
 	k_timer_stop(&iaq_state_save_timer);
 #endif
 }
@@ -415,64 +431,6 @@ bsec_library_return_t iaq_bsec_subscribe(void)
 	}
 	return ret;
 }
-
-int iaq_bsec_load_state(void)
-{
-	/* NOTE: stack size > 221 + 4086 (4307 bytes). */
-	uint8_t data[BSEC_MAX_STATE_BLOB_SIZE];
-	uint8_t buf[BSEC_MAX_WORKBUFFER_SIZE];
-	uint32_t len;
-
-	int ret = bme68x_iaq_nvs_read_state(data, &len);
-	if (ret) {
-		if (ret == -ENOENT) {
-			LOG_INF("no BSEC state available");
-		} else {
-			LOG_ERR("failed to read BSEC state: %d", ret);
-		}
-		return ret;
-	}
-
-	ret = bsec_set_state(data, len, buf, BSEC_MAX_WORKBUFFER_SIZE);
-	if (ret) {
-		LOG_ERR("failed to set BSEC state: %d", ret);
-	} else {
-		LOG_INF("loaded BSEC state (%u bytes)", len);
-	}
-
-	return ret;
-}
-
-#if BME68X_IAQ_STATE_SAVE_INTVL
-void iaq_bsec_save_state(void)
-{
-	/* NOTE: stack size > 221 + 4086 (4307 bytes). */
-	uint8_t state[BSEC_MAX_STATE_BLOB_SIZE];
-	uint8_t buf[BSEC_MAX_WORKBUFFER_SIZE];
-	uint32_t len;
-
-	int ret = bsec_get_state(0, state, sizeof(state), buf, sizeof(buf), &len);
-	if (ret) {
-		LOG_ERR("BSEC state unavailable: %d", ret);
-	}
-
-	ret = bme68x_iaq_nvs_write_state(state, len);
-
-	/*
-	 * Disable BSEC state persistence on first error,
-	 * restart timer only when successful.
-	 */
-	if (ret) {
-		LOG_ERR("failed to save BSEC state: %d", ret);
-		LOG_ERR("BSEC state persistence disabled");
-
-	} else {
-		LOG_INF("saved BSEC state (%u bytes)", len);
-		k_timer_start(&iaq_state_save_timer, K_MINUTES(BME68X_IAQ_STATE_SAVE_INTVL),
-			      K_NO_WAIT);
-	}
-}
-#endif
 
 int8_t iaq_bsec_trigger_measurement(bsec_bme_settings_t const *sensor_settings,
 				    struct bme68x_dev *dev)
@@ -705,3 +663,70 @@ int64_t iaq_uptime_ns(void)
 	 */
 	return (int64_t)k_ticks_to_ns_floor64(ticks);
 }
+
+#if CONFIG_BME68X_IAQ_SETTINGS
+int iaq_bsec_load_state(void)
+{
+	/* NOTE: stack size > 221 + 4086 (4307 bytes). */
+	uint8_t data[BSEC_MAX_STATE_BLOB_SIZE];
+	uint8_t buf[BSEC_MAX_WORKBUFFER_SIZE];
+	uint32_t len;
+
+	int ret = bme68x_iaq_settings_read_bsec_state(data, &len);
+	if (ret) {
+		if (ret == -ENOENT) {
+			LOG_INF("no saved BSEC state available");
+		} else {
+			LOG_ERR("failed to read BSEC state: %d", ret);
+		}
+		return ret;
+	}
+
+	ret = bsec_set_state(data, len, buf, BSEC_MAX_WORKBUFFER_SIZE);
+	if (ret) {
+		LOG_ERR("failed to set BSEC state: %d", ret);
+	} else {
+		LOG_INF("loaded BSEC state (%u bytes)", len);
+	}
+
+	return ret;
+}
+
+void iaq_bsec_save_state(void)
+{
+	/* NOTE: stack size > 221 + 4086 (4307 bytes). */
+	uint8_t state[BSEC_MAX_STATE_BLOB_SIZE];
+	uint8_t buf[BSEC_MAX_WORKBUFFER_SIZE];
+	uint32_t len;
+
+	int ret = bsec_get_state(0, state, sizeof(state), buf, sizeof(buf), &len);
+	if (ret) {
+		LOG_ERR("BSEC state unavailable: %d", ret);
+		return;
+	}
+
+	ret = bme68x_iaq_settings_write_bsec_state(state, len);
+
+	if (ret) {
+		k_timer_stop(&iaq_state_save_timer);
+		iaq_state_saves_intvl = 0;
+
+		LOG_ERR("failed to save BSEC state: %d", ret);
+		LOG_ERR("BSEC state persistence disabled");
+
+	} else {
+		LOG_INF("saved BSEC state (%u bytes)", len);
+		k_timer_start(&iaq_state_save_timer, K_MINUTES(iaq_state_saves_intvl), K_NO_WAIT);
+	}
+}
+
+void iaq_bsec_delete_state(void)
+{
+	int err = bme68x_iaq_settings_delete_bsec_state();
+	if (err) {
+		LOG_ERR("failed to delete BSEC state: %d", err);
+	} else {
+		LOG_INF("deleted BSEC state");
+	}
+}
+#endif /* CONFIG_BME68X_IAQ_SETTINGS */

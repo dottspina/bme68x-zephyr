@@ -20,14 +20,14 @@ See also:
 
 ## Configuration
 
-This library should be enabled with [Kconfig].
+To enable this library:
 
-| [`Kconfig`]                    | Option                               |
-|--------------------------------|--------------------------------------|
-| `BME68X_IAQ (=n)`              | Enable Support library for BSEC IAQ  |
-| `BME68X_IAQ_NVS (=n)`          | Enable BSEC state persistence to NVS |
+| [`Kconfig`]           | Option                                               |
+|-----------------------|------------------------------------------------------|
+| `BME68X_IAQ`          | Enable Support library for BSEC IAQ                  |
+| `BME68X_IAQ_SETTINGS` | Enable BSEC state persistence to per-device settings |
 
-Configuration options are accessible via the Kconfig menu: `Modules → bme68x → [*] Support library for BSEC IAQ`.
+All configuration options are accessible via the Kconfig menu: `Modules → bme68x → [*] Support library for BSEC IAQ`.
 
 [`Kconfig`]: Kconfig
 [Kconfig]: https://docs.zephyrproject.org/latest/build/kconfig/index.html
@@ -88,9 +88,43 @@ These options are accessible via the Kconfig menu: `Modules → bme68x → [*] S
 
 [lib/bsec]: /zephyr/lib/bsec
 
-### Non-Volatile Storage
+### BSEC state persistence
 
-This library relies on Zephyr [Non-Volatile Storage (NVS)] for BSEC state persistence.
+Two forms of BSEC state persistence are available:
+- to a dedicated [Non-Volatile Storage (NVS)] partition
+- to the per-device settings (Zephyr [Settings] subsystem)
+
+> [!NOTE]
+>
+> BSEC persistence to the per-device settings is now the preferred approach:
+> - no need to alter the Flash partitions layout to e.g. shrink the "storage" partition and define a new dedicated one
+> - easier, less error prone integration with Zephyr components that rely on the Settings subsystem (e.g. the Bluetooth LE host stack)
+
+#### To per-device settings
+
+Configuring an application for BSEC persistence to per-device settings should be straight forward, e.g. using the common NVS back-end (see also [`nrf52840dk_nrf52840-settings.conf`]): 
+
+``` conf
+# Enable and configure Zephyr Settings subsystem,
+# if not already an application's requirement.
+CONFIG_SETTINGS=y
+CONFIG_SETTINGS_NVS=y
+CONFIG_NVS=y
+CONFIG_FLASH=y
+
+# Enable BSEC state persistence (Settings subsystem).
+CONFIG_BME68X_IAQ_SETTINGS=y
+```
+
+When enabled, BSEC state persistence to the per-device settings is by default entirely automatic:
+- during initialization, the library will try to load a saved BSEC state from the device settings (default), or reset any previously saved state if `BME68X_IAQ_RST_SAVED_STATE` is set 
+- then periodically save the state of the BSEC algorithm to the device settings, according to `BME68X_IAQ_STATE_SAVE_INTVL` (the default is one day, a value of zero will disable periodic saves)
+
+[`nrf52840dk_nrf52840-settings.conf`]: boards/nrf52840dk_nrf52840-settings.conf
+
+#### To dedicated NVS partition
+
+This library also includes an API for BSEC state persistence to *raw* [Non-Volatile Storage (NVS)] .
 
 The NVS file-system expects a partition with [DT node label] `bsec_partition` that can accommodate two flash pages (two *sectors* of one page each).
 
@@ -98,7 +132,7 @@ The NVS file-system expects a partition with [DT node label] `bsec_partition` th
 
 A simple approach is to resize the *storage* partition which should exist for all boards that support NVS.
 
-For example, the [nRF52840 DK] has 1MB of flash storage partitioned as bellow in the board's DTS:
+For example, the [nRF52840 DK] has 1MB of flash storage partitioned as below in the board's DTS:
 
 ``` dts
     &flash0 {
@@ -134,7 +168,7 @@ For example, the [nRF52840 DK] has 1MB of flash storage partitioned as bellow in
 | *image-1* | `0x00082000` | `0x000f7fff` | `0x00076000` (472 kB)  |
 | *storage* | `0x000f8000` | `0x000fffff` | `0x00008000` (*32 kB*) |
 
-Assuming a page size of 4 kB, we could rearrange the partitions like bellow:
+Assuming a page size of 4 kB, we could rearrange the partitions like below:
 
 | Partition        | Starts       | Ends         | Size                            |
 |------------------|--------------|--------------|---------------------------------|
@@ -170,6 +204,7 @@ The [boards](boards) directory contains example DTS overlay and configuration fi
 
 [`NVS`]: https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_NVS
 [Non-Volatile Storage (NVS)]: https://docs.zephyrproject.org/latest/services/storage/nvs/nvs.html
+[Settings]: https://docs.zephyrproject.org/latest/services/storage/settings/
 [Fixed flash partitions]: https://docs.zephyrproject.org/latest/build/dts/api/api.html#fixed-flash-partitions
 [Flash wear]: https://docs.zephyrproject.org/latest/services/storage/nvs/nvs.html#flash-wear
 [nRF52840 DK]: https://docs.zephyrproject.org/latest/boards/nordic/nrf52840dk/doc/index.html
@@ -177,16 +212,18 @@ The [boards](boards) directory contains example DTS overlay and configuration fi
 
 ## API
 
-| API                  | Description                   |
-|----------------------|-------------------------------|
-| [`bme68x_iaq.h`]     | Support API for BSEC IAQ mode |
-| [`bme68x_iaq_nvs.h`] | BSEC state persistence to NVS |
+| API                       | Description                       |
+|---------------------------|-----------------------------------|
+| [`bme68x_iaq.h`]          | Support API for BSEC IAQ mode     |
+| [`bme68x_iaq_nvs.h`]      | BSEC state persistence (NVS)      |
+| [`bme68x_iaq_settings.h`] | BSEC state persistence (Settings) |
 
 [`bme68x_iaq.h`]: include/bme68x_iaq.h
 [`bme68x_iaq_nvs.h`]: include/bme68x_iaq_nvs.h
+[`bme68x_iaq_settings.h`]: include/bme68x_iaq_settings.h
 
 See [samples/bme68x-iaq] for a complete example application.
-
+    
 ### IAQ mode
 
 BSEC IAQ mode with [`bme68x_iaq.h`]:
@@ -227,6 +264,10 @@ void iaq_output_handler(struct bme68x_iaq_sample const *iaq_sample)
 3. Initialize and configure BSEC algorithm, possibly restoring saved state from flash storage:
 
 ``` C
+    /* Optionally, initialize the Settings subsystem for BSEC state persistence. */
+    settings_subsys_init();
+    
+    /* Initialize and configure BSEC. */
     bme68x_iaq_init();
 ```
 
@@ -258,7 +299,14 @@ void iaq_output_handler(struct bme68x_iaq_sample const *iaq_sample)
 
 ### BSEC state persistence
 
-The persistence API [`bme68x_iaq_nvs.h`] can also be used independently:
+Client applications should not even need to call the persistence API to per-device settings [`bme68x_iaq_settings.h`]: everything is automatically setup by `bme68x_iaq_init()`. 
+
+> [!TIP]
+>
+> Just don't forget to call `settings_subsys_init()` before `bme68x_iaq_init()`
+> if BSEC state persistence is enabled.
+
+The *raw* persistence API [`bme68x_iaq_nvs.h`] can be used independently:
 
 - the application must first call `bme68x_iaq_nvs_init()` to initialize NVS support
 - then `bme68x_iaq_nvs_read_state()` and `bsec_set_state()` to load saved state

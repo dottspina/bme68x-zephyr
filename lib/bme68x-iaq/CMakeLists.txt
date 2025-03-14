@@ -34,10 +34,21 @@ zephyr_library_include_directories(
 )
 zephyr_include_directories(include)
 
-zephyr_library_sources(
+set(bme68x_iaq_src
   ${bsec_conf_dir}/bsec_iaq.c
-  src/bme68x_iaq_nvs.c
   src/bme68x_iaq.c
+)
+
+if(CONFIG_BME68X_IAQ_NVS)
+  list(APPEND bme68x_iaq_src src/bme68x_iaq_nvs.c)
+endif(CONFIG_BME68X_IAQ_NVS)
+
+if(CONFIG_BME68X_IAQ_SETTINGS)
+  list(APPEND bme68x_iaq_src src/bme68x_iaq_settings.c)
+endif(CONFIG_BME68X_IAQ_SETTINGS)
+
+zephyr_library_sources(
+  ${bme68x_iaq_src}
 )
 
 zephyr_library_compile_options(-Wall -Werror)

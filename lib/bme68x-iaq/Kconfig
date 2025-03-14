@@ -21,28 +21,46 @@ config BME68X_IAQ_AMBIENT_TEMP
 	  in degree Celsius.
 
 config BME68X_IAQ_NVS
-	bool "Non Volatile Storage"
+	bool "BSEC state persistence (NVS)"
 	depends on NVS
 	help
 	  Enable support for BSEC state persistence to Flash storage with NVS.
 
-	  When this NVS support is enabled, the library will always try
-	  to load a saved BSEC state during its initialization,
-	  regardless of BME68X_IAQ_STATE_SAVE_INTVL.
+	  Build API for BSEC state persistence to NVS.
+
+	  See also: BME68X_IAQ_SETTINGS
+
+config BME68X_IAQ_SETTINGS
+	bool "BSEC state persistence (Settings)"
+	depends on SETTINGS
+	help
+	  Enable support for BSEC state persistence to per-device settings.
+
+	  When enabled, the library will:
+	  - on initialization, try to load a saved BSEC state,
+	    or reset any previously saved state if BME68X_IAQ_RST_SAVED_STATE is set
+	  - periodically update the saved BSEC state,
+	    according to BME68X_IAQ_STATE_SAVE_INTVL
 
 config BME68X_IAQ_STATE_SAVE_INTVL
 	int "BSEC state save interval"
-	depends on BME68X_IAQ_NVS
-	default 1440
+	depends on BME68X_IAQ_SETTINGS
+	default 1140
 	help
-	  When the Non Volatile Storage support is available,
-	  this library's IAQ control loop will periodically save
-	  the BSEC algorithm state to flash memory.
+	  When the BSEC state persistence enabled,
+	  this library's IAQ control loop will periodically
+	  save the BSEC algorithm state to flash memory.
 
 	  This is the periodicity in minutes,
-	  e.g. 1440 to save the algorthim state once a day.
+	  e.g. 1440 to save the algorithm state once a day.
 
 	  Set this option to zero to disable periodic BSEC state persistence.
+
+config BME68X_IAQ_RST_SAVED_STATE
+	bool "Reset saved BSEC state"
+	depends on BME68X_IAQ_SETTINGS
+	help
+	  Delete BSEC state from per-device settings during system reset.
 
 menu "IAQ configuration"
 
