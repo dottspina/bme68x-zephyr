@@ -45,14 +45,13 @@ This sample application relies on [drivers/bme68x-sensor-api] to communicate wit
 [samples/bme68x-tphg]: /samples/bme68x-tphg
 [communication interface]: /drivers/bme68x-sensor-api/README.md#compatible-devices
 
-
 ### BSEC
 
-Refer to [lib/bme68x-iaq] to configure the BSEC algorithm and state persistence to flash storage ([NVS]).
+Refer to [lib/bme68x-iaq] to configure the BSEC algorithm and state persistence (see also  [`boards/nrf52840dk_nrf52840.conf`] for an example of enabling the [Settings] subsystem with an NVS backend). 
 
 [lib/bme68x-iaq]: /lib/bme68x-iaq
-[NVS]: https://docs.zephyrproject.org/latest/services/storage/nvs/nvs.html
-
+[`boards/nrf52840dk_nrf52840.conf`]: boards/nrf52840dk_nrf52840.conf
+[Settings]: https://docs.zephyrproject.org/latest/services/storage/settings/
 
 ## Building and running
 

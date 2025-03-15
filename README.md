@@ -175,7 +175,7 @@ Top-level configuration options are summarized bellow.
 | [drivers/bme68x-sensor-api] | `BME68X_SENSOR_API_DRIVER` | Enable BME68X Sensor API (driver)        |
 | [lib/bsec]                  | `BSEC`                     | Enable BSEC library                      |
 | [lib/bme68x-iaq]            | `BME68X_IAQ`               | Enable support library for BSEC IAQ      |
-|                             | `BME68X_IAQ_NVS`           | Enable BSEC state persistence to flash   |
+|                             | `BME68X_IAQ_SETTINGS`      | Enable BSEC state persistence            |
 
 > [!TIP]
 >
@@ -334,9 +334,26 @@ Console output:
 
 For other CPUs, or if the build fails with some "Failed to guess BSEC target" or "BSEC blob not found" message, refer to [lib/bsec].
 
-Once this works, refer to [lib/bme68x-iaq] if you want to try BSEC state persistence to flash storage ([NVS]).
+Once this works, refer to [lib/bme68x-iaq] to enable and configure BSEC state persistence to the per-device settings (Zephyr [Settings] subsystem).
 
-[NVS]: https://docs.zephyrproject.org/latest/services/storage/nvs/nvs.html
+> [!TIP]
+>
+> Boards that include some Flash memory will likely support NVS and define a "storage" partition in their DTS.
+> Enabling BSEC state persistence can then be as simple as:
+>
+> ``` conf
+> # Enable the Settings subsystem (NVS backend)
+> CONFIG_NVS=y
+> CONFIG_FLASH=y
+> CONFIG_FLASH_MAP=y
+> CONFIG_SETTINGS=y
+> CONFIG_SETTINGS_NVS=y
+>
+> # Enable BSEC state persistence to per-device settings
+> CONFIG_BME68X_IAQ_SETTINGS=y
+> ```
+
+[Settings]: https://docs.zephyrproject.org/latest/services/storage/settings/
 
 ## Rationale
 

@@ -9,6 +9,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
+#include <zephyr/settings/settings.h>
+#endif
+
 #include <drivers/bme68x_sensor_api.h>
 
 #include "bme68x.h"
@@ -93,6 +97,11 @@ int main(void)
 		LOG_ERR("sensor initialization failed: %d", ret);
 		goto sleep_forever;
 	}
+
+#ifdef CONFIG_BME68X_IAQ_SETTINGS
+	/* Shall be initialized before the bme68x_iaq library. */
+	settings_subsys_init();
+#endif
 
 	ret = bme68x_iaq_init();
 	if (ret) {
