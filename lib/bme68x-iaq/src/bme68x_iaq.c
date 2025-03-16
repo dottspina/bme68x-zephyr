@@ -223,10 +223,6 @@ static bsec_sensor_configuration_t const iaq_virt_sensors[] = {
 		.sample_rate = BME68X_IAQ_SAMPLE_RATE,
 	},
 	{
-		.sensor_id = BSEC_OUTPUT_STATIC_IAQ,
-		.sample_rate = BME68X_IAQ_SAMPLE_RATE,
-	},
-	{
 		.sensor_id = BSEC_OUTPUT_CO2_EQUIVALENT,
 		.sample_rate = BME68X_IAQ_SAMPLE_RATE,
 	},
@@ -622,12 +618,9 @@ void iaq_sample_set_outputs(int64_t ts_ns, bsec_output_t const *bsec_outputs, si
 			iaq_sample->humidity = bsec_outputs[i].signal;
 			break;
 		case BSEC_OUTPUT_IAQ:
-			iaq_sample->iaq = (uint16_t)bsec_outputs[i].signal;
+			iaq_sample->iaq = bsec_outputs[i].signal;
 			iaq_sample->iaq_accuracy =
 				(enum bme68x_iaq_accuracy)bsec_outputs[i].accuracy;
-			break;
-		case BSEC_OUTPUT_STATIC_IAQ:
-			iaq_sample->static_iaq = (uint32_t)bsec_outputs[i].signal;
 			break;
 		case BSEC_OUTPUT_CO2_EQUIVALENT:
 			iaq_sample->co2_equivalent = bsec_outputs[i].signal;

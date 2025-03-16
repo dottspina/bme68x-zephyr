@@ -65,8 +65,6 @@ struct iaq_output {
 	/* Scaled IAQ [0,500]. */
 	uint16_t iaq;
 	enum bme68x_iaq_accuracy iaq_accuracy;
-	/* Unscaled IAQ, range unknown. */
-	uint32_t static_iaq;
 	/* CO2 equivalent estimate in ppm. */
 	uint32_t co2_equivalent;
 	enum bme68x_iaq_accuracy co2_accuracy;
@@ -131,18 +129,16 @@ static void iaq_output_init(struct bme68x_iaq_sample const *iaq_sample,
 	fixed_point_init(iaq_sample->raw_temperature, 100, &iaq_output->raw_temperature);
 	fixed_point_init(iaq_sample->temperature, 100, &iaq_output->temperature);
 	/* Pa to kPa, Pa precision */
-	fixed_point_init(iaq_sample->raw_pressure / 1000.0f, 1000, &iaq_output->raw_pressure);
+	fixed_point_init(iaq_sample->raw_pressure / 1000, 1000, &iaq_output->raw_pressure);
 	/* percent to percent, centipercent precision. */
 	fixed_point_init(iaq_sample->raw_humidity, 100, &iaq_output->raw_humidity);
 	fixed_point_init(iaq_sample->humidity, 100, &iaq_output->humidity);
 	/* Ohm to kOhm, Ohm precision. */
-	fixed_point_init(iaq_sample->raw_gas_res / 1000.0f, 1000, &iaq_output->raw_gas_res);
+	fixed_point_init(iaq_sample->raw_gas_res / 1000, 1000, &iaq_output->raw_gas_res);
 	/* IAQ scaled to [0,500]. */
 	iaq_output->iaq = (uint16_t)iaq_sample->iaq;
 	iaq_output->iaq_accuracy = iaq_sample->iaq_accuracy;
-	/* Unscaled IAQ, range unknown. */
-	iaq_output->static_iaq = (uint32_t)iaq_sample->static_iaq;
-	/* ppm. */
+	/* ppm (death comes at 250000 ppm). */
 	iaq_output->co2_equivalent = (uint32_t)iaq_sample->co2_equivalent;
 	iaq_output->co2_accuracy = iaq_sample->co2_accuracy;
 	/* ppm, 1/100 ppm precision. */

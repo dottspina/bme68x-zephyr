@@ -16,24 +16,30 @@
 extern "C" {
 #endif
 
-/** BSEC output signal accuracy. */
+/** BSEC output signal accuracy.
+ *
+ * See `bsec_output_t::accuracy`.
+ */
 enum bme68x_iaq_accuracy {
 	/** Sensor data is unreliable, the sensor must be calibrated. */
 	BME68X_IAQ_ACCURACY_UNRELIABLE = 0,
 	/** Reliability of virtual sensor is low, sensor should be calibrated. */
-	BME68X_IAQ_ACCURACY_LOW,
+	BME68X_IAQ_ACCURACY_LOW = 1,
 	/** Medium reliability, sensor calibration or training may improve. */
-	BME68X_IAQ_ACCURACY_MEDIUM,
+	BME68X_IAQ_ACCURACY_MEDIUM = 2,
 	/** High reliability. */
-	BME68X_IAQ_ACCURACY_HIGH,
+	BME68X_IAQ_ACCURACY_HIGH = 3,
 };
 
-/** Stabilization status. */
+/** Stabilization status.
+ *
+ * See BSEC signals `BSEC_OUTPUT_STABILIZATION_STATUS` and `BSEC_OUTPUT_RUN_IN_STATUS`.
+ */
 enum bme68x_iaq_status {
 	/** Stabilization is ongoing. */
 	BME68X_IAQ_STAB_ONGOING = 0,
 	/** Stabilization is finished. */
-	BME68X_IAQ_STAB_FINISHED,
+	BME68X_IAQ_STAB_FINISHED = 1,
 };
 
 /**
@@ -57,11 +63,9 @@ struct bme68x_iaq_sample {
 	/** Sensor heat compensated relative humidity in %. */
 	float humidity;
 	/** Indoor-air-quality estimate, [0-500] (from clean to heavily polluted air). */
-	uint16_t iaq;
+	float iaq;
 	/** IAQ estimate accuracy. */
 	enum bme68x_iaq_accuracy iaq_accuracy;
-	/** Unscaled IAQ. */
-	uint32_t static_iaq;
 	/**
 	 * @brief CO2 equivalent estimate in ppm.
 	 *
