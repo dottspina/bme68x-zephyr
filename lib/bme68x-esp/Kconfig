@@ -1,0 +1,309 @@
+# Copyright (c) 2024, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BME68X_ESP
+	bool "Environmental Sensing Profile"
+	depends on BT_PERIPHERAL
+	help
+	  Enable Bluetooth Environmental Sensing Profile (ESP).
+
+	  Will automatically enable the Environmental Sensing Service (ESS):
+	  - supports the Temperature, Pressure and Humidity ESS characteristics
+	  - for each characteristic, an ES Trigger Setting can be configured;
+	    by default, triggers are inactive and notifications depend only
+	    on the corresponding Client Characteristic Configuration descriptors.
+
+if BME68X_ESP
+
+config BME68X_ESP_GAP_ADV_AUTO
+	bool "Automatically resume advertising"
+	default y
+	help
+	  Automatically resume advertising
+	  whenever a connection resource is available.
+
+menu "Temperature Trigger Setting"
+
+choice BME68X_TEMPERATURE_TRIGGER_CONDITION
+	prompt "Condition"
+	default BME68X_TEMPERATURE_TRIGGER_INACTIVE
+
+config BME68X_TEMPERATURE_TRIGGER_INACTIVE
+	bool "Disable trigger"
+
+config BME68X_TEMPERATURE_TRIGGER_FIXED_TIME
+	bool "Use a fixed time interval between transmissions"
+
+config BME68X_TEMPERATURE_TRIGGER_GTE_TIME
+	bool "No less than the specified time between transmissions"
+
+config BME68X_TEMPERATURE_TRIGGER_VALUE_CHANGED
+	bool "When value changes compared to previous value"
+
+config BME68X_TEMPERATURE_TRIGGER_LT_VALUE
+	bool "While less than the specified value"
+
+config BME68X_TEMPERATURE_TRIGGER_LTE_VALUE
+	bool "While less than or equal to the specified value"
+
+config BME68X_TEMPERATURE_TRIGGER_GT_VALUE
+	bool "While greater than the specified value"
+
+config BME68X_TEMPERATURE_TRIGGER_GTE_VALUE
+	bool "While greater than or equal to the specified value"
+
+config BME68X_TEMPERATURE_TRIGGER_VALUE
+	bool "While equal to the specified value"
+
+config BME68X_TEMPERATURE_TRIGGER_NOT_VALUE
+	bool "While not equal to the specified value"
+
+endchoice # BME68X_TEMPERATURE_TRIGGER_CONDITION
+config BME68X_TEMPERATURE_TRIGGER_CONDITION
+	int
+	default 0 if BME68X_TEMPERATURE_TRIGGER_INACTIVE
+	default 1 if BME68X_TEMPERATURE_TRIGGER_FIXED_TIME
+	default 2 if BME68X_TEMPERATURE_TRIGGER_GTE_TIME
+	default 3 if BME68X_TEMPERATURE_TRIGGER_VALUE_CHANGED
+	default 4 if BME68X_TEMPERATURE_TRIGGER_LT_VALUE
+	default 5 if BME68X_TEMPERATURE_TRIGGER_LTE_VALUE
+	default 6 if BME68X_TEMPERATURE_TRIGGER_GT_VALUE
+	default 7 if BME68X_TEMPERATURE_TRIGGER_GTE_VALUE
+	default 8 if BME68X_TEMPERATURE_TRIGGER_VALUE
+	default 9 if BME68X_TEMPERATURE_TRIGGER_NOT_VALUE
+
+config BME68X_TEMPERATURE_TRIGGER_SECONDS
+	int "Seconds"
+	depends on BME68X_TEMPERATURE_TRIGGER_FIXED_TIME || \
+		BME68X_TEMPERATURE_TRIGGER_GTE_TIME
+	default 30
+
+config BME68X_TEMPERATURE_TRIGGER_TEMPERATURE
+	int "Value (Celsius x 100)"
+	depends on BME68X_TEMPERATURE_TRIGGER_LT_VALUE || \
+		BME68X_TEMPERATURE_TRIGGER_LTE_VALUE || \
+		BME68X_TEMPERATURE_TRIGGER_GT_VALUE  || \
+		BME68X_TEMPERATURE_TRIGGER_GTE_VALUE || \
+		BME68X_TEMPERATURE_TRIGGER_VALUE     || \
+		BME68X_TEMPERATURE_TRIGGER_NOT_VALUE
+	default 2000
+
+config BME68X_TEMPERATURE_TRIGGER_OPERAND
+	int
+	# Only conditions with operand.
+	depends on !(BME68X_TEMPERATURE_TRIGGER_INACTIVE \
+		|| BME68X_TEMPERATURE_TRIGGER_VALUE_CHANGED)
+	# Time-based conditions operand.
+	default BME68X_TEMPERATURE_TRIGGER_SECONDS \
+		if BME68X_TEMPERATURE_TRIGGER_FIXED_TIME \
+		|| BME68X_TEMPERATURE_TRIGGER_GTE_TIME
+	# Value-based conditions operand.
+	default BME68X_TEMPERATURE_TRIGGER_TEMPERATURE \
+		if BME68X_TEMPERATURE_TRIGGER_LT_VALUE || \
+		BME68X_TEMPERATURE_TRIGGER_LTE_VALUE || \
+		BME68X_TEMPERATURE_TRIGGER_GT_VALUE  || \
+		BME68X_TEMPERATURE_TRIGGER_GTE_VALUE || \
+		BME68X_TEMPERATURE_TRIGGER_VALUE     || \
+		BME68X_TEMPERATURE_TRIGGER_NOT_VALUE
+endmenu # Temperature Trigger Setting
+
+menu "Pressure Trigger Setting"
+choice BME68X_PRESSURE_TRIGGER_CONDITION
+	prompt "Condition"
+	default BME68X_PRESSURE_TRIGGER_INACTIVE
+
+config BME68X_PRESSURE_TRIGGER_INACTIVE
+	bool "Disable trigger"
+
+config BME68X_PRESSURE_TRIGGER_FIXED_TIME
+	bool "Use a fixed time interval between transmissions"
+
+config BME68X_PRESSURE_TRIGGER_GTE_TIME
+	bool "No less than the specified time between transmissions"
+
+config BME68X_PRESSURE_TRIGGER_VALUE_CHANGED
+	bool "When value changes compared to previous value"
+
+config BME68X_PRESSURE_TRIGGER_LT_VALUE
+	bool "While less than the specified value"
+
+config BME68X_PRESSURE_TRIGGER_LTE_VALUE
+	bool "While less than or equal to the specified value"
+
+config BME68X_PRESSURE_TRIGGER_GT_VALUE
+	bool "While greater than the specified value"
+
+config BME68X_PRESSURE_TRIGGER_GTE_VALUE
+	bool "While greater than or equal to the specified value"
+
+config BME68X_PRESSURE_TRIGGER_VALUE
+	bool "While equal to the specified value"
+
+config BME68X_PRESSURE_TRIGGER_NOT_VALUE
+	bool "While not equal to the specified value"
+
+endchoice # BME68X_PRESSURE_TRIGGER_CONDITION
+config BME68X_PRESSURE_TRIGGER_CONDITION
+	int
+	default 0 if BME68X_PRESSURE_TRIGGER_INACTIVE
+	default 1 if BME68X_PRESSURE_TRIGGER_FIXED_TIME
+	default 2 if BME68X_PRESSURE_TRIGGER_GTE_TIME
+	default 3 if BME68X_PRESSURE_TRIGGER_VALUE_CHANGED
+	default 4 if BME68X_PRESSURE_TRIGGER_LT_VALUE
+	default 5 if BME68X_PRESSURE_TRIGGER_LTE_VALUE
+	default 6 if BME68X_PRESSURE_TRIGGER_GT_VALUE
+	default 7 if BME68X_PRESSURE_TRIGGER_GTE_VALUE
+	default 8 if BME68X_PRESSURE_TRIGGER_VALUE
+	default 9 if BME68X_PRESSURE_TRIGGER_NOT_VALUE
+
+config BME68X_PRESSURE_TRIGGER_SECONDS
+	int "Seconds"
+	depends on BME68X_PRESSURE_TRIGGER_FIXED_TIME || \
+		BME68X_PRESSURE_TRIGGER_GTE_TIME
+	default 3
+
+config BME68X_PRESSURE_TRIGGER_PRESSURE
+	int "Value (Pascal x 10)"
+	depends on BME68X_PRESSURE_TRIGGER_LT_VALUE || \
+		BME68X_PRESSURE_TRIGGER_LTE_VALUE || \
+		BME68X_PRESSURE_TRIGGER_GT_VALUE  || \
+		BME68X_PRESSURE_TRIGGER_GTE_VALUE || \
+		BME68X_PRESSURE_TRIGGER_VALUE     || \
+		BME68X_PRESSURE_TRIGGER_NOT_VALUE
+	default 1000000
+
+config BME68X_PRESSURE_TRIGGER_OPERAND
+	int
+	# Only conditions with operand.
+	depends on !(BME68X_PRESSURE_TRIGGER_INACTIVE \
+		|| BME68X_PRESSURE_TRIGGER_VALUE_CHANGED)
+	# Time-based conditions operand.
+	default BME68X_PRESSURE_TRIGGER_SECONDS \
+		if BME68X_PRESSURE_TRIGGER_FIXED_TIME \
+		|| BME68X_PRESSURE_TRIGGER_GTE_TIME
+	# Value-based conditions operand.
+	default BME68X_PRESSURE_TRIGGER_PRESSURE \
+		if BME68X_PRESSURE_TRIGGER_LT_VALUE || \
+		BME68X_PRESSURE_TRIGGER_LTE_VALUE || \
+		BME68X_PRESSURE_TRIGGER_GT_VALUE  || \
+		BME68X_PRESSURE_TRIGGER_GTE_VALUE || \
+		BME68X_PRESSURE_TRIGGER_VALUE     || \
+		BME68X_PRESSURE_TRIGGER_NOT_VALUE
+endmenu # Pressure Trigger Setting
+
+menu "Humidity Trigger Setting"
+choice BME68X_HUMIDITY_TRIGGER_CONDITION
+	prompt "Condition"
+	default BME68X_HUMIDITY_TRIGGER_INACTIVE
+
+config BME68X_HUMIDITY_TRIGGER_INACTIVE
+	bool "Disable trigger"
+
+config BME68X_HUMIDITY_TRIGGER_FIXED_TIME
+	bool "Use a fixed time interval between transmissions"
+
+config BME68X_HUMIDITY_TRIGGER_GTE_TIME
+	bool "No less than the specified time between transmissions"
+
+config BME68X_HUMIDITY_TRIGGER_VALUE_CHANGED
+	bool "When value changes compared to previous value"
+
+config BME68X_HUMIDITY_TRIGGER_LT_VALUE
+	bool "While less than the specified value"
+
+config BME68X_HUMIDITY_TRIGGER_LTE_VALUE
+	bool "While less than or equal to the specified value"
+
+config BME68X_HUMIDITY_TRIGGER_GT_VALUE
+	bool "While greater than the specified value"
+
+config BME68X_HUMIDITY_TRIGGER_GTE_VALUE
+	bool "While greater than or equal to the specified value"
+
+config BME68X_HUMIDITY_TRIGGER_VALUE
+	bool "While equal to the specified value"
+
+config BME68X_HUMIDITY_TRIGGER_NOT_VALUE
+	bool "While not equal to the specified value"
+
+endchoice # BME68X_HUMIDITY_TRIGGER_CONDITION
+config BME68X_HUMIDITY_TRIGGER_CONDITION
+	int
+	default 0 if BME68X_HUMIDITY_TRIGGER_INACTIVE
+	default 1 if BME68X_HUMIDITY_TRIGGER_FIXED_TIME
+	default 2 if BME68X_HUMIDITY_TRIGGER_GTE_TIME
+	default 3 if BME68X_HUMIDITY_TRIGGER_VALUE_CHANGED
+	default 4 if BME68X_HUMIDITY_TRIGGER_LT_VALUE
+	default 5 if BME68X_HUMIDITY_TRIGGER_LTE_VALUE
+	default 6 if BME68X_HUMIDITY_TRIGGER_GT_VALUE
+	default 7 if BME68X_HUMIDITY_TRIGGER_GTE_VALUE
+	default 8 if BME68X_HUMIDITY_TRIGGER_VALUE
+	default 9 if BME68X_HUMIDITY_TRIGGER_NOT_VALUE
+
+config BME68X_HUMIDITY_TRIGGER_SECONDS
+	int "Seconds"
+	depends on BME68X_HUMIDITY_TRIGGER_FIXED_TIME || \
+		BME68X_HUMIDITY_TRIGGER_GTE_TIME
+	default 3
+
+config BME68X_HUMIDITY_TRIGGER_HUMIDITY
+	int "Value (Percent x 100)"
+	depends on BME68X_HUMIDITY_TRIGGER_LT_VALUE || \
+		BME68X_HUMIDITY_TRIGGER_LTE_VALUE || \
+		BME68X_HUMIDITY_TRIGGER_GT_VALUE  || \
+		BME68X_HUMIDITY_TRIGGER_GTE_VALUE || \
+		BME68X_HUMIDITY_TRIGGER_VALUE     || \
+		BME68X_HUMIDITY_TRIGGER_NOT_VALUE
+	default 6000
+
+config BME68X_HUMIDITY_TRIGGER_OPERAND
+	int
+	# Only conditions with operand.
+	depends on !(BME68X_HUMIDITY_TRIGGER_INACTIVE \
+		|| BME68X_HUMIDITY_TRIGGER_VALUE_CHANGED)
+	# Time-based conditions operand.
+	default BME68X_HUMIDITY_TRIGGER_SECONDS \
+		if BME68X_HUMIDITY_TRIGGER_FIXED_TIME \
+		|| BME68X_HUMIDITY_TRIGGER_GTE_TIME
+	# Value-based conditions operand.
+	default BME68X_HUMIDITY_TRIGGER_HUMIDITY \
+		if BME68X_HUMIDITY_TRIGGER_LT_VALUE || \
+		BME68X_HUMIDITY_TRIGGER_LTE_VALUE || \
+		BME68X_HUMIDITY_TRIGGER_GT_VALUE  || \
+		BME68X_HUMIDITY_TRIGGER_GTE_VALUE || \
+		BME68X_HUMIDITY_TRIGGER_VALUE     || \
+		BME68X_HUMIDITY_TRIGGER_NOT_VALUE
+endmenu # Humidity Trigger Setting
+
+
+choice BME68X_ESP_LOG_LEVEL_CHOICE
+	prompt "Max compiled-in log level"
+	default BME68X_ESP_LOG_LEVEL_DEFAULT
+	depends on LOG
+
+config BME68X_ESP_LOG_LEVEL_OFF
+	bool "Off"
+config BME68X_ESP_LOG_LEVEL_ERR
+	bool "Error"
+config BME68X_ESP_LOG_LEVEL_WRN
+	bool "Warning"
+config BME68X_ESP_LOG_LEVEL_INF
+	bool "Info"
+config BME68X_ESP_LOG_LEVEL_DBG
+	bool "Debug"
+config BME68X_ESP_LOG_LEVEL_DEFAULT
+	bool "Default"
+endchoice
+
+config BME68X_ESP_LOG_LEVEL
+	int
+	depends on LOG
+	default 0 if BME68X_ESP_LOG_LEVEL_OFF
+	default 1 if BME68X_ESP_LOG_LEVEL_ERR
+	default 2 if BME68X_ESP_LOG_LEVEL_WRN
+	default 3 if BME68X_ESP_LOG_LEVEL_INF
+	default 4 if BME68X_ESP_LOG_LEVEL_DBG
+	default LOG_DEFAULT_LEVEL if BME68X_ESP_LOG_LEVEL_DEFAULT
+
+endif # BME68X_ESP
