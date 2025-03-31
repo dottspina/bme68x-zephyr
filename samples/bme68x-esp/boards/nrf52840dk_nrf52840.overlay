@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Example DTS overlay with a single BME680/688 device
+ * connected to I2C.
+ */
+
+&i2c0 {
+	bme680@76 {
+		compatible = "bosch,bme68x-sensor-api";
+		reg = <0x76>;
+	};
+};
+

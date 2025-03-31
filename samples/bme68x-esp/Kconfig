@@ -1,0 +1,13 @@
+# Copyright (c) 2025, Chris Duf
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "BME68X Sample - ESP"
+
+module = BME68X_SAMPLE
+module-str = app
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu # "BME68X Sample - ESP"
+
+source "Kconfig.zephyr"
