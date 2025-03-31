@@ -2,8 +2,13 @@
 
 Device driver, support libraries and sample applications for Bosch Sensortec's [BME68X Sensor API] and [BSEC] integration with Zephyr-RTOS.
 
+Preliminary support for the Bluetooth Environmental Sensor role (Environmental Sensing Service, [ESS] [ESP]).
+
 [BME68X Sensor API]: https://github.com/boschsensortec/BME68x_SensorAPI
 [BSEC]: https://www.bosch-sensortec.com/software-tools/software/bme680-software-bsec/
+
+[ESS]: https://www.bluetooth.com/specifications/specs/environmental-sensing-service-1-0/
+[ESP]: https://www.bluetooth.com/specifications/specs/environmental-sensing-profile-1-0/
 
 | Library                     | Provides                                                    |
 |-----------------------------|-------------------------------------------------------------|
@@ -11,19 +16,23 @@ Device driver, support libraries and sample applications for Bosch Sensortec's [
 | [drivers/bme68x-sensor-api] | BME68X Sensor API integration with Zephyr-RTOS (driver)     |
 | [lib/bsec]                  | Bosch Sensortec Environmental Cluster (BSEC)                |
 | [lib/bme68x-iaq]            | Support library for IAQ with the BME68X Sensor API and BSEC |
+| [lib/bme68x-esp]            | Support library for the Bluetooth Environmental Sensor role |
 
 [lib/bme68x-sensor-api]: lib/bme68x-sensor-api
 [drivers/bme68x-sensor-api]: drivers/bme68x-sensor-api
 [lib/bsec]: lib/bsec
 [lib/bme68x-iaq]: lib/bme68x-iaq
+[lib/bme68x-esp]: lib/bme68x-esp
 
-| Sample                | Application                                                     |
-|-----------------------|-----------------------------------------------------------------|
-| [samples/bme68x-tphg] | Forced THPG measurements with the BME68X Sensor API             |
-| [samples/bme68x-iaq]  | Index for Air Quality (IAQ) with BSEC and the BME68X Sensor API |
+| Sample                | Application                                                       |
+|-----------------------|-------------------------------------------------------------------|
+| [samples/bme68x-tphg] | Forced THPG measurements with the BME68X Sensor API               |
+| [samples/bme68x-iaq]  | Index for Air Quality (IAQ) with BSEC and the BME68X Sensor API   |
+| [samples/bme68x-esp]  | Environmental Sensing Service with BSEC and the BME68X Sensor API |
 
 [samples/bme68x-tphg]: samples/bme68x-tphg
 [samples/bme68x-iaq]: samples/bme68x-iaq
+[samples/bme68x-esp]: samples/bme68x-esp
 
 > [!IMPORTANT]
 >
