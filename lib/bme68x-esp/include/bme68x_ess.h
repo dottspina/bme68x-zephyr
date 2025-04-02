@@ -16,12 +16,14 @@
  * - Pressure (0x2A6D): GATT Specification Supplement 3.181
  * - Humidity (0x2A6F): GATT Specification Supplement 3.124
  *
- * Each ESS characteristic associates a read-only ES Trigger Setting
- * configured at build-time (Kconfig).
- * All ES Trigger Setting conditions are supported.
- *
  * See Bluetooth SIG Assigned Numbers §6.1.1 for the complete list
  * of defined ESS characteristics.
+ *
+ * Each ESS characteristic associates an ES Trigger Setting:
+ * - initialy configured at build-time (Kconfig)
+ * - then either read-only, or modifiable by connected centrals
+ *
+ * All ES Trigger Setting conditions are supported.
  */
 
 #include <stdint.h>
@@ -89,8 +91,6 @@ union es_trigger_setting_operand {
 /** @brief ES Trigger Setting Descriptor.
  *
  * Environmental Sensing Service §3.1.2.2
- *
- * NOTE: Trigger settings are read-only, configured at build-time.
  */
 struct es_trigger_setting {
 	enum es_trigger_setting_condition condition;

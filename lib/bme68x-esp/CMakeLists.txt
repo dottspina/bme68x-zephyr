@@ -15,4 +15,4 @@ zephyr_library_sources(
   src/bme68x_esp_sensor.c
 )
 
-zephyr_library_compile_options(-Wall -Werror)
+zephyr_library_compile_options(-Wall -Werror -Wunused-parameter)

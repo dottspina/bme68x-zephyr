@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Chris Duf
+# Copyright (c) 2025, Chris Duf
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,9 +10,13 @@ menuconfig BME68X_ESP
 
 	  Will automatically enable the Environmental Sensing Service (ESS):
 	  - supports the Temperature, Pressure and Humidity ESS characteristics
-	  - for each characteristic, an ES Trigger Setting can be configured;
-	    by default, triggers are inactive and notifications depend only
-	    on the corresponding Client Characteristic Configuration descriptors.
+	  - for each characteristic, notifications are configured with
+	    an ES Trigger Setting descriptor;
+
+	  By default, characteristic values are notified to subscribed clients
+	  "when the value changes compared to previous value",
+	  and ES Trigger Setting descriptors cannot be modified by connected centrals.
+
 
 if BME68X_ESP
 
@@ -23,14 +27,51 @@ config BME68X_ESP_GAP_ADV_AUTO
 	  Automatically resume advertising
 	  whenever a connection resource is available.
 
-menu "Temperature Trigger Setting"
+choice BME68X_ES_TRIGGER_SETTINGS_PERM
+	prompt "Allow clients to reconfigure notifications"
+	default BME68X_ES_TRIGGER_SETTINGS_READ
+	help
+	  Whether connected centrals can write to ES Trigger Setting descriptors.
+	  By default, ES Trigger Setting descriptors are read-only.
+
+config BME68X_ES_TRIGGER_SETTINGS_READ
+	bool "Never"
+	help
+	  All ES Trigger Setting descriptors are read-only.
+
+config BME68X_ES_TRIGGER_SETTINGS_WRITE
+	bool "Always"
+	help
+	  Any connected central can write to all ES Trigger Setting descriptors.
+
+	  To limit write access to encrypted or authenticated connections,
+	  first enable the Security Manager Protocol (BT_SMP).
+
+config BME68X_ES_TRIGGER_SETTINGS_WRITE_ENCRYPT
+	bool "Encrypted connections"
+	depends on BT_SMP
+	help
+	  ES Trigger Setting descriptors are writable only
+	  over encrypted connections.
+
+config BME68X_ES_TRIGGER_SETTINGS_WRITE_AUTHEN
+	bool "Authenticated connections"
+	depends on BT_SMP
+	help
+	  ES Trigger Setting descriptors are writable only
+	  over authenticated connections.
+
+endchoice # BME68X_ES_TRIGGER_SETTINGS_PERM
+
+
+menu "Temperature notifications"
 
 choice BME68X_TEMPERATURE_TRIGGER_CONDITION
 	prompt "Condition"
-	default BME68X_TEMPERATURE_TRIGGER_INACTIVE
+	default BME68X_TEMPERATURE_TRIGGER_VALUE_CHANGED
 
 config BME68X_TEMPERATURE_TRIGGER_INACTIVE
-	bool "Disable trigger"
+	bool "Disabled"
 
 config BME68X_TEMPERATURE_TRIGGER_FIXED_TIME
 	bool "Use a fixed time interval between transmissions"
@@ -91,9 +132,6 @@ config BME68X_TEMPERATURE_TRIGGER_TEMPERATURE
 
 config BME68X_TEMPERATURE_TRIGGER_OPERAND
 	int
-	# Only conditions with operand.
-	depends on !(BME68X_TEMPERATURE_TRIGGER_INACTIVE \
-		|| BME68X_TEMPERATURE_TRIGGER_VALUE_CHANGED)
 	# Time-based conditions operand.
 	default BME68X_TEMPERATURE_TRIGGER_SECONDS \
 		if BME68X_TEMPERATURE_TRIGGER_FIXED_TIME \
@@ -106,15 +144,17 @@ config BME68X_TEMPERATURE_TRIGGER_OPERAND
 		BME68X_TEMPERATURE_TRIGGER_GTE_VALUE || \
 		BME68X_TEMPERATURE_TRIGGER_VALUE     || \
 		BME68X_TEMPERATURE_TRIGGER_NOT_VALUE
+	# Set a default value for conditions without operand.
+	default 0
 endmenu # Temperature Trigger Setting
 
-menu "Pressure Trigger Setting"
+menu "Pressure notifications"
 choice BME68X_PRESSURE_TRIGGER_CONDITION
 	prompt "Condition"
-	default BME68X_PRESSURE_TRIGGER_INACTIVE
+	default BME68X_PRESSURE_TRIGGER_VALUE_CHANGED
 
 config BME68X_PRESSURE_TRIGGER_INACTIVE
-	bool "Disable trigger"
+	bool "Disabled"
 
 config BME68X_PRESSURE_TRIGGER_FIXED_TIME
 	bool "Use a fixed time interval between transmissions"
@@ -161,7 +201,7 @@ config BME68X_PRESSURE_TRIGGER_SECONDS
 	int "Seconds"
 	depends on BME68X_PRESSURE_TRIGGER_FIXED_TIME || \
 		BME68X_PRESSURE_TRIGGER_GTE_TIME
-	default 3
+	default 30
 
 config BME68X_PRESSURE_TRIGGER_PRESSURE
 	int "Value (Pascal x 10)"
@@ -175,9 +215,6 @@ config BME68X_PRESSURE_TRIGGER_PRESSURE
 
 config BME68X_PRESSURE_TRIGGER_OPERAND
 	int
-	# Only conditions with operand.
-	depends on !(BME68X_PRESSURE_TRIGGER_INACTIVE \
-		|| BME68X_PRESSURE_TRIGGER_VALUE_CHANGED)
 	# Time-based conditions operand.
 	default BME68X_PRESSURE_TRIGGER_SECONDS \
 		if BME68X_PRESSURE_TRIGGER_FIXED_TIME \
@@ -190,15 +227,17 @@ config BME68X_PRESSURE_TRIGGER_OPERAND
 		BME68X_PRESSURE_TRIGGER_GTE_VALUE || \
 		BME68X_PRESSURE_TRIGGER_VALUE     || \
 		BME68X_PRESSURE_TRIGGER_NOT_VALUE
+	# Set a default value for conditions without operand.
+	default 0
 endmenu # Pressure Trigger Setting
 
-menu "Humidity Trigger Setting"
+menu "Humidity notifications"
 choice BME68X_HUMIDITY_TRIGGER_CONDITION
 	prompt "Condition"
-	default BME68X_HUMIDITY_TRIGGER_INACTIVE
+	default BME68X_HUMIDITY_TRIGGER_VALUE_CHANGED
 
 config BME68X_HUMIDITY_TRIGGER_INACTIVE
-	bool "Disable trigger"
+	bool "Disabled"
 
 config BME68X_HUMIDITY_TRIGGER_FIXED_TIME
 	bool "Use a fixed time interval between transmissions"
@@ -245,7 +284,7 @@ config BME68X_HUMIDITY_TRIGGER_SECONDS
 	int "Seconds"
 	depends on BME68X_HUMIDITY_TRIGGER_FIXED_TIME || \
 		BME68X_HUMIDITY_TRIGGER_GTE_TIME
-	default 3
+	default 30
 
 config BME68X_HUMIDITY_TRIGGER_HUMIDITY
 	int "Value (Percent x 100)"
@@ -259,9 +298,6 @@ config BME68X_HUMIDITY_TRIGGER_HUMIDITY
 
 config BME68X_HUMIDITY_TRIGGER_OPERAND
 	int
-	# Only conditions with operand.
-	depends on !(BME68X_HUMIDITY_TRIGGER_INACTIVE \
-		|| BME68X_HUMIDITY_TRIGGER_VALUE_CHANGED)
 	# Time-based conditions operand.
 	default BME68X_HUMIDITY_TRIGGER_SECONDS \
 		if BME68X_HUMIDITY_TRIGGER_FIXED_TIME \
@@ -274,6 +310,8 @@ config BME68X_HUMIDITY_TRIGGER_OPERAND
 		BME68X_HUMIDITY_TRIGGER_GTE_VALUE || \
 		BME68X_HUMIDITY_TRIGGER_VALUE     || \
 		BME68X_HUMIDITY_TRIGGER_NOT_VALUE
+	# Set a default value for conditions without operand.
+	default 0
 endmenu # Humidity Trigger Setting
 
 
