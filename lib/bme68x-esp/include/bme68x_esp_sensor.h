@@ -9,9 +9,11 @@
 
 /** @brief Environmental Sensor role of the Environmental Sensing Profile.
  *
+ * Setup Bluetooth connections management
+ * and initialize the Environmental Sensing Service (ESS).
  */
 
-#include <stdint.h>
+#include "bme68x_esp_gap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,17 +22,24 @@ extern "C" {
 /**
  * @brief Initialize Environmental Sensor role.
  *
- * This API will load Bluetooth settings: the Settings subsystem shall be initialized.
- * This API will start advertising the Environmental Sensing Service
- * if `CONFIG_BME68X_ESP_GAP_ADV_AUTO` is set.
+ * - Initialize Bluetooth host.
+ * - Load bonding information from persistent storage if BT_SETTING is set (the Settings subsystem
+ *   shall already be initialized).
+ * - Initialize the Environmental Sensing Service (ESS),
+ *   start advertising if BME68X_ESP_GAP_ADV_AUTO is set
  *
- * @param cb_state_changed Connection management state changes callback.
- *                         Invoked from the connection management thread, must not block.
- *                         May be `NULL`.
+ * @param cb_gap_state_changed Register this callback to be informed of base connection management
+ *                             events. May be NULL.
+ * @param conn_auth_callbacks  Authentication callbacks needed to update connections security
+ *                             to Level 3 Encryption and authentication (MITM).
+ *                             Leave NULL for JustWorks pairing or if Bluetooth SMP is disabled.
+ *                             Authenticated connections require callbacks for at least
+ *                             DisplayOnly I/O capabilities.
  *
  * @return 0 on success, non-zero error code on failure.
  */
-int bme68x_esp_sensor_init(void (*cb_state_changed)(uint32_t flags, uint8_t conn_avail));
+int bme68x_esp_sensor_init(bme68x_gap_state_changed_cb cb_gap_state_changed,
+			   struct bt_conn_auth_cb const *conn_auth_callbacks);
 
 #ifdef __cplusplus
 }

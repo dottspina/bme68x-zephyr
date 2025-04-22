@@ -30,20 +30,8 @@ static struct bt_data const sensor_scan_data[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
-#ifdef CONFIG_BME68X_ESP_GAP_ADV_AUTO
-#define BME68X_ESP_GAP_CFG_FLAGS BME68X_GAP_CFG_ADV_AUTO
-#else
-#define BME68X_ESP_GAP_CFG_FLAGS 0
-#endif
-
 static int sensor_bt_init(void)
 {
-	/*
-	 * Enable Bluetooth (synchronously).
-	 *
-	 * Note: generating lots of warnings is a known issue.
-	 * See https://github.com/zephyrproject-rtos/zephyr/issues/80167.
-	 */
 	int err = bt_enable(NULL);
 	if (err) {
 		LOG_ERR("BT subsystem unabailable: %d", err);
@@ -61,7 +49,8 @@ static int sensor_bt_init(void)
 	return 0;
 }
 
-int bme68x_esp_sensor_init(void (*cb_state_changed)(uint32_t flags, uint8_t conn_avail))
+int bme68x_esp_sensor_init(bme68x_gap_state_changed_cb cb_gap_state_changed,
+			   struct bt_conn_auth_cb const *conn_auth_callbacks)
 {
 	int err = sensor_bt_init();
 	if (err) {
@@ -78,6 +67,6 @@ int bme68x_esp_sensor_init(void (*cb_state_changed)(uint32_t flags, uint8_t conn
 						 .scan_data = sensor_scan_data,
 						 .scan_data_len = ARRAY_SIZE(sensor_scan_data)};
 
-	err = bme68x_esp_gap_init(&adv_cfg, BME68X_ESP_GAP_CFG_FLAGS, cb_state_changed);
+	err = bme68x_esp_gap_init(&adv_cfg, cb_gap_state_changed, conn_auth_callbacks);
 	return err;
 }
