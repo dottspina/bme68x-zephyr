@@ -20,16 +20,6 @@ config BME68X_IAQ_AMBIENT_TEMP
 	  Initial ambient temperature used to computer heater resistance
 	  in degree Celsius.
 
-config BME68X_IAQ_NVS
-	bool "BSEC state persistence (NVS)"
-	depends on NVS
-	help
-	  Enable support for BSEC state persistence to Flash storage with NVS.
-
-	  Build API for BSEC state persistence to NVS.
-
-	  See also: BME68X_IAQ_SETTINGS
-
 config BME68X_IAQ_SETTINGS
 	bool "BSEC state persistence (Settings)"
 	depends on SETTINGS
@@ -61,6 +51,16 @@ config BME68X_IAQ_RST_SAVED_STATE
 	depends on BME68X_IAQ_SETTINGS
 	help
 	  Delete BSEC state from per-device settings during system reset.
+
+config BME68X_IAQ_NVS
+	bool "BSEC state persistence (NVS)"
+	depends on NVS
+	help
+	  Enable support for BSEC state persistence to Flash storage with NVS.
+
+	  Build API for BSEC state persistence to NVS.
+
+	  See also: BME68X_IAQ_SETTINGS
 
 menu "IAQ configuration"
 
