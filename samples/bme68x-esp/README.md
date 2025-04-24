@@ -1,15 +1,14 @@
-# BME68X Sample ─ Environmental Sensing Service with BSEC and the BME68X Sensor API.
+# BME68X Sample ─ Environmental Sensing Service (ESS)
 
-Adds the Bluetooth Environmental Sensing Service (ESS) provided by [lib/bme68x-esp] to the [samples/bme68x-iaq] application:
+Example use of the [lib/bme68x-esp] library: adds support for [Environmental Sensing Service] to [samples/bme68x-iaq], making [BSEC] output for Temperature, Pressure and Humidity available over Bluetooth LE.
 
-- initialize BME680/688 sensor device
-- initialize and configure [BSEC] algorithm for IAQ
-- enter BSEC control loop, logging *received* IAQ output samples
-- expose Temperature, Pressure and Humidity as ESS characteristics
+A client application like [nRF Connect] then allows you to consult the measurements and configure notifications.
 
-[BSEC]: https://www.bosch-sensortec.com/software-tools/software/bme680-software-bsec/
-[samples/bme68x-iaq]: /samples/bme68x-iaq
 [lib/bme68x-esp]: /lib/bme68x-esp
+[Environmental Sensing Service]: https://www.bluetooth.com/specifications/specs/environmental-sensing-service-1-0/
+[samples/bme68x-iaq]: /samples/bme68x-iaq
+[BSEC]: https://www.bosch-sensortec.com/software-tools/software/bme680-software-bsec/
+[nRF Connect]: https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp
 
 ## Configuration
 
@@ -49,21 +48,21 @@ To configure the Environmental Sensor role of the Environmental Sensing Profile:
 - all configuration options are accessible via the Kconfig menu: `Modules → bme68x → [*] Environmental Sensing Profile`
 - more generally, refer to [lib/bme68x-esp]
 
+The default behavior is:
+- to notify measurements to subscribed clients "When value changes compared to previous value"
+- to accept only one connected client at a time, and automatically resume advertising, allowing re-connections
+- to not authorize client applications to reconfigure notifications (read-only ES Trigger Setting descriptors)
+
+> [!TIP]
+>
+> If `BME68X_ES_TRIGGER_SETTINGS_WRITE_AUHENT` is set, allowing clients to reconfigure notifications only over authenticated connections, the application will automatically register a simple logging-based *DisplayOnly* callbacks.
+
 ## Building and running
 
-Nothing unusual, e:g:
+Nothing unusual, e.g.:
 
 ```
 $ cd bme68x-zephyr
 $ west build samples/bme68x-esp -t menuconfig
 $ west flash
 ```
-
-> [!TIP]
->
-> If the `bme68x` module is not installed as an external project managed by West, its path must be appended to `ZEPHYR_EXTRA_MODULES`:
->
-> - in [`CMakeLists.txt`]
-> - or as CMake variable, e.g. `west build -- -DZEPHYR_EXTRA_MODULES=/path/to/bme68x-zephyr`
-
-[`CMakeLists.txt`]: CMakeLists.txt

@@ -1,22 +1,52 @@
 /*
- * Copyright (c) 2024, Chris Duf
+ * Copyright (c) 2025, Chris Duf
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Environmental Sensing Service with BSEC and the BME68X Sensor API.
+ * BSEC-based Environmental Sensing Service (ESS).
  */
 
 #include <drivers/bme68x_sensor_api.h>
 #include "bme68x.h"
-#include "bme68x_iaq.h"
-#include "bme68x_ess.h"
+#include "bme68x_esp_gap.h"
 #include "bme68x_esp_sensor.h"
+#include "bme68x_ess.h"
+#include "bme68x_iaq.h"
 
-#include <zephyr/kernel.h>
+#include <stdint.h>
+
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_SETTINGS
 #include <zephyr/settings/settings.h>
+#endif
 
 LOG_MODULE_REGISTER(app, CONFIG_BME68X_SAMPLE_LOG_LEVEL);
+
+#ifdef CONFIG_BME68X_ES_TRIGGER_SETTINGS_WRITE_AUTHEN
+/* Logging-based DisplayOnly I/O for authenticating connections.
+ */
+#define LE_CONN_ADDR_STR(CONN, S)                                                                  \
+	char S[BT_ADDR_LE_STR_LEN];                                                                \
+	bt_addr_le_to_str(bt_conn_get_dst(CONN), S, sizeof(S))
+
+static void cb_auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	LE_CONN_ADDR_STR(conn, addr_str);
+	LOG_INF("%s - Passkey: %06u", addr_str, passkey);
+}
+static void cb_auth_cancel(struct bt_conn *conn)
+{
+	LE_CONN_ADDR_STR(conn, addr_str);
+	LOG_INF("%s - Authentication canceled", addr_str);
+}
+struct bt_conn_auth_cb const *conn_auth_callbacks = &(struct bt_conn_auth_cb){
+	.passkey_display = cb_auth_passkey_display,
+	.cancel = cb_auth_cancel,
+};
+#else
+/* JustWorks pairing or Bluetooth SMP disabled. */
+struct bt_conn_auth_cb const *conn_auth_callbacks = NULL;
+#endif
 
 static void iaq_output_handler(struct bme68x_iaq_sample const *iaq_sample);
 static void cb_gap_state_changed(uint32_t flags, uint8_t conn_avail);
@@ -33,7 +63,7 @@ int main(void)
 	}
 	if (ret) {
 		LOG_ERR("BME68X initialization failed: %d", ret);
-		goto sleep_forever;
+		return 0;
 	}
 
 	/* Initialize settings subsystem early. */
@@ -41,52 +71,37 @@ int main(void)
 	ret = settings_subsys_init();
 	if (ret) {
 		LOG_ERR("Settings subsystem error: %d", ret);
-		goto sleep_forever;
+		return 0;
 	}
 #endif
 
-	/* Initialize ESP Environmental Sensor role. */
-	ret = bme68x_esp_sensor_init(cb_gap_state_changed);
+	/* Initialize Bluetooth Environmental Sensor role (ESS). */
+	ret = bme68x_esp_sensor_init(cb_gap_state_changed, conn_auth_callbacks);
 	if (ret) {
 		LOG_ERR("ESP initialization failed: %d", ret);
-		goto sleep_forever;
+		return 0;
 	}
 
 	/* Initialize and configure BSEC IAQ. */
 	ret = bme68x_iaq_init();
 	if (ret) {
 		LOG_ERR("IAQ initialization failed: %d", ret);
-		goto sleep_forever;
+		return 0;
 	}
 
-	/* Run BSEC algorithm control loop. */
+	/* Start updating ESS Characteristics with BSEC algorithm output. */
 	bme68x_iaq_run(&bme68x_dev, iaq_output_handler);
 
-sleep_forever:
-	k_sleep(K_FOREVER);
 	return 0;
 }
 
 void iaq_output_handler(struct bme68x_iaq_sample const *iaq_sample)
 {
-	static char const *accuracy2str[] = {
-		[BME68X_IAQ_ACCURACY_UNRELIABLE] = "unreliable",
-		[BME68X_IAQ_ACCURACY_LOW] = "low accuracy",
-		[BME68X_IAQ_ACCURACY_MEDIUM] = "medium accuracy",
-		[BME68X_IAQ_ACCURACY_HIGH] = "high accuracy",
-	};
-	static char const *stab2str[] = {
-		[BME68X_IAQ_STAB_ONGOING] = "on-going",
-		[BME68X_IAQ_STAB_FINISHED] = "finished",
-	};
+	LOG_INF("%.02f degC, %.01f Pa, %.02f%%", (double)iaq_sample->temperature,
+		(double)iaq_sample->raw_pressure, (double)iaq_sample->humidity);
+	LOG_INF("VOC: %0.3f ppm", (double)iaq_sample->voc_equivalent);
 
-	LOG_INF("T: %.02f degC", (double)iaq_sample->temperature);
-	LOG_INF("P: %.01f Pascal", (double)iaq_sample->raw_pressure);
-	LOG_INF("H: %.02f %%", (double)iaq_sample->humidity);
-	LOG_INF("IAQ: %.02f (%s)", (double)iaq_sample->iaq, accuracy2str[iaq_sample->iaq_accuracy]);
-	LOG_INF("stabilization: %s, %s", stab2str[iaq_sample->stab_status],
-		stab2str[iaq_sample->run_status]);
-
+	/* Update ESS Characteristics. */
 	(void)bme68x_ess_update_temperature(iaq_sample->temperature * 100);
 	(void)bme68x_ess_update_pressure(iaq_sample->raw_pressure * 10);
 	(void)bme68x_ess_update_humidity(iaq_sample->humidity * 100);
@@ -94,11 +109,11 @@ void iaq_output_handler(struct bme68x_iaq_sample const *iaq_sample)
 
 void cb_gap_state_changed(uint32_t flags, uint8_t conn_avail)
 {
-	/*
-	 * 0x00000001: ADV_AUTO
-	 * 0x00010000: ADV_CONN
-	 * 0x00020000: CONNECTED
-	 * 0x01000000: ENETDOWN
-	 */
-	LOG_INF("state: 0x%08x (%hu)", flags, conn_avail);
+	if (flags & BME68X_GAP_STATE_ADV_CONN) {
+		/* E.g. turn LED on. */
+		LOG_INF("advertising LED: ON");
+	} else {
+		/* E.g. turn LED off. */
+		LOG_INF("advertising LED: OFF");
+	}
 }
