@@ -1,0 +1,11 @@
+# Copyright (c) 2025, Chris Duf
+# SPDX-License-Identifier: Apache-2.0
+#
+# Manifest file to add to zephyr/submanifests.
+
+manifest:
+  projects:
+    - name: bme68x
+      url: https://github.com/dottspina/bme68x-zephyr.git
+      revision: main
+      path: modules/lib/bme68x

@@ -1,16 +1,18 @@
 # bme68x-zephyr ─ Alternative BME680/688 sensors support for Zephyr-RTOS
 
-Alternative device driver for BME680/688 sensors (I2C/SPI), support libraries and sample applications for Bosch Sensortec's [BME68X Sensor API] and [BSEC] integration with Zephyr-RTOS.
+Alternative device driver for BME680/688 sensors (I2C/SPI) and support libraries for Bosch Sensortec's [BME68X Sensor API] and [BSEC] integration with Zephyr-RTOS.
 
-Since watching the measurements on the application log is not really fun, this module also includes an experimental implementation of the Bluetooth [Environmental Sensing Service]: it currently supports the Temperature, Pressure and Humidity ESS Characteristics and all variants of ES Trigger Setting descriptors.
+Since watching the measurements on the application log is not really fun, this module also includes an experimental implementation of the Bluetooth [Environmental Sensing Service]: it currently supports the Temperature, Pressure and Humidity ESS Characteristics and all variants of ES Trigger Setting descriptors. It does not depend on BME680/688 sensors or BSEC, and can be tried independently.
 
 | Library                     | Provides                                                          |
 |-----------------------------|-------------------------------------------------------------------|
 | [lib/bme68x-sensor-api]     | Bosch Sensortec's BME68X Sensor API                               |
-| [drivers/bme68x-sensor-api] | BME68X Sensor API integration with Zephyr-RTOS (driver)           |
-| [lib/bsec]                  | Bosch Sensortec Environmental Cluster (BSEC)                      |
+| [drivers/bme68x-sensor-api] | Alternative BME68X I2C/SPI drivers                                |
+| [lib/bsec]                  | Bosch Sensortec Environmental Cluster (BSEC) library              |
 | [lib/bme68x-iaq]            | Support library for IAQ with the BME68X Sensor API and BSEC       |
 | [lib/bme68x-esp]            | Support library for the Bluetooth [Environmental Sensing Profile] |
+
+Various sample applications are available.
 
 | Sample                | Application                                         |
 |-----------------------|-----------------------------------------------------|
@@ -20,133 +22,121 @@ Since watching the measurements on the application log is not really fun, this m
 
 > [!IMPORTANT]
 >
-> For simple periodic measurements of temperature, pressure, humidity and gas resistance
+> For simple measurements of temperature, pressure, humidity and gas resistance,
 > Zephyr provides the [`bosch,bme680`] device driver which implements the [Fetch and Get] subset
-> of the [Sensors] API: setup a timer to periodically call `sensor_sample_fetch()` and `sensor_sample_get()`,
-> and that's it.
+> of the [Sensors] API: check it first.
 >
 > This alternative support may be helpful as a starting point:
 >
-> - when instead planning to access the BME680/688 devices through the BME68X Sensor API
-> - when needing complete control over the BME680/688 sensors, e.g. to implement the dynamic reconfiguration
->   required for integration with Bosch Sensortec Environmental Cluster (BSEC)
+> - when instead planning to access the BME680/688 devices through the *standard* BME68X Sensor API, e.g. for features specific to the BME688
+> - when needing complete control over the BME680/688 sensors configuration, e.g. to implement the periodic reconfiguration required for integration with Bosch Sensortec Environmental Cluster (BSEC)
 >
-> If interested, [Rationale](#rationale) goes into some detail about why the upstream BME680 driver is not very helpful
-> for the above use cases.
+> Those interested in the limitations of the upstream BME680 driver that this alternative attempts to address can also take a look at [Rationale](#rationale).
 >
-> **Status**:
+> **About this repository**:
 >
-> - a couples of years ago, I wrote a simple Zephyr application with Index for Air Quality (IAQ) support for my new [BME680] sensor
-> - then I resurrected the BME680, and realized that I had thrown away all the *boiler plate* code and configuration files needed for integration with the Zephyr build system, Devicetree and device drivers
-> - this repository will help me keep something almost clean that should work *Out of the box* in case I want to play with my BME680 again
+> - years ago, I wrote a simple Zephyr application with Index for Air Quality (IAQ) support for my new [BME680] sensor
+> - then, one day, I resurrected the BME680, and realized that I had thrown away the whole thing, including all the *boiler plate* code and configuration files needed for integration with the Zephyr build system, Devicetree and device drivers
+> - this repository will help me keep something almost clean that should work *out of the box* when I want to play with the BME680
 > - it's made public as a Zephyr module so others don't have to reinvent the wheel, or simply as a source of inspiration to reinvent their own wheel
 > - Apache-2.0 license, on an "AS IS" BASIS WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND
+> - Recently tested with Zephyr 4.3.0
 
-Browsing through the [Quick Start Guide](#quick-start-guide), which describes how to get the IAQ application sample up and running *in five minutes*, may also help to get the big picture.
+Skimming through the [Quick Start Guide](#quick-start-guide), which describes how to get the IAQ application sample up and running *in five minutes*, may help to get the big picture.
 
 ## Installation
 
-The driver and support libraries are provided as the [Zephyr Module] (`bme68x`), which can be *installed*:
+The driver and support libraries are provided as a [Zephyr Module] (`bme68x`), which can be *installed*:
 
-- either as an *external project* managed by West
+- either as an *external project* managed by West (recommended)
 - or as an *extra module* given to CMake
 
 ### External project
 
-We assume a Zephyr command line development environment managed by [West] ([Workspaces]), installed e.g. following the Zephyr [Getting Started Guide]:
+This method assumes a Zephyr command line development environment managed by [West].
 
-```
-zephyr-project/
-├── bootloader/
-│   └── mcuboot/
-├── modules/
-│   ├── bsim_hw_models/
-│   ├── ... stripped ...
-│   ├── lib
-│   └── tee
-├── tools/
-└── zephyr/
-    ├── arch/
-    ├── ... stripped ...
-    └── west.yml
-```
+To install this `bme68x` module as an external project, simply create a new [manifest] file in your `zephyr/submanifests` directory, e.g. `bme68x.yaml`, with the content bellow:
 
-Add an external project entry at the end of the workspace [manifest] (`zephyr-project/zephyr/west.yml`), e.g.:
-
-``` yml
-projects:
-    # ... stripped ...
+``` yaml
+manifest:
+  projects:
     - name: bme68x
       url: https://github.com/dottspina/bme68x-zephyr.git
       revision: main
       path: modules/lib/bme68x
 ```
 
-Then update the defined projects:
+Then fetch (or update) the external project as usual: `west update bme68x`
+
+Bosch Sensortec provides the BSEC library as binary blobs for various hardware and toolchains. These binaries are proprietary and we can't redistribute them.
+However, the project manifest includes definitions ([Zephyr binary blobs]) for ELF static libraries targeting most of the supported Cortex-M and ESP32 microcontrollers, which you can install at any time:
+
+- Accept [BSEC License Terms and Conditions]
+- Download binary blobs `west blobs fetch bme68x`
+
+See [lib/bsec] for more details, especially if your MCU family is not predefined or recognized.
+
+The changes made to the workspace are summarized bellow:
 
 ```
-$ west update
-=== updating bme68x (modules/lib/bme68x):
---- bme68x: initializing
-Initialized empty Git repository in /path/to/zephyr-project/modules/lib/bme68x/.git/
---- bme68x: fetching, need revision main
-remote: Enumerating objects: 230, done.
-remote: Counting objects: 100% (230/230), done.
-remote: Compressing objects: 100% (148/148), done.
-remote: Total 230 (delta 97), reused 207 (delta 74), pack-reused 0
-Receiving objects: 100% (230/230), 118.89 KiB | 637.00 KiB/s, done.
-Resolving deltas: 100% (97/97), done.
-From github.com:dottspina/bme68x-zephyr
- * branch            main       -> FETCH_HEAD
+zephyr-project/
+├── modules/
+│   └── lib/
+│       └── bme68x/
+│           ├── CMakeLists.txt
+│           ├── drivers/
+│           ├── dts/
+│           ├── Kconfig
+│           ├── lib/
+│           ├── samples/
+│           └── zephyr/
+|               └── blobs/
+|                   └── bsec/
+|                       └── <MCU>/
+|                           └── libalgobsec.a
+└── zephyr/
+    └── submanifests/
+        └── bme68x.yaml
 ```
-
-The module `bme68x` should now be installed in `zephyr-project/modules/lib/bme68x`.
 
 > [!TIP]
 >
-> This is the recommended approach:
->
-> - when planning to use the Bosch Sensortec Environmental Cluster (BSEC) library: it permits to simply install the required binaries as [Zephyr binary blobs]
-> - more generally, this simplifies the build-system configuration of depending applications
+> This is the recommended approach, which greatly simplifies:
+> - the installation and integration of the BSEC library
+> - the build-system configuration for dependent applications
 
 ### Extra module
 
-For use in applications without messing with manifest files or workspaces, clone the project and add the extra module to the build system, typically in your `CMakeList.txt` (**before** `find_package()`):
+This approach does not depend on West and instead requires to *manually* configure the build system of each dependent project.
+
+Most of the time it's enough to simply add the local path of your clone (or fork) of this module repository to the extra modules the project depends on.
+For example, in your top-level `CMakeList.txt` (**before** `find_package(ZEPHYR)`):
 
 ``` cmake
 list(APPEND ZEPHYR_EXTRA_MODULES
-   # Absolute path to the bme68x module (the directory that contains zephyr/module.yml).
+   # Absolute path to your clone of the bme68x-zephyr module repository.
    /path/to/bme68x-zephyr
 )
 ```
 
-> [!TIP]
+Bosch Sensortec provides the BSEC library as binary blobs for various hardware and toolchains. These binaries are proprietary and we can't redistribute them.
+Unfortunately, this approach does not come with a semi-automatic method for downloading them to their appropriate location. See [lib/bsec] for more details.
+
+> [!NOTE]
 >
-> When building a sample application, simply enable the corresponding lines in its `CMakeList.txt`:
+> Very specific workflows or environments might require additional configuration steps:
 >
-> ``` cmake
-> list(APPEND ZEPHYR_EXTRA_MODULES
->     ${CMAKE_SOURCE_DIR}/../..
-> )
-> ```
-
-Depending on your workflow and environment, this approach may also require additional configuration of the [Zephyr Build system]:
-
-- to properly build the additional [System Calls] defined by this module: search the [Zephyr documentation] for `SYSCALL_INCLUDE_DIRS`
-- to add the [Devicetree Bindings] for this `bosch,bme68x-sensor-api` driver: see e.g. [Using an external DTS binding for an out-of-tree driver] or search the Zephyr documentation for `DTS_ROOT`
-
-It will also require manual installation of the BSEC algorithm binaries: see [lib/bsec]
-
-[Integrate modules in Zephyr build system] may also help.
+> - to properly build the [System Calls] defined by this module: search the [Zephyr documentation] for `SYSCALL_INCLUDE_DIRS`
+> - to add the [Devicetree Bindings] for this `bosch,bme68x-sensor-api` driver: see e.g. [Using an external DTS binding for an out-of-tree driver] or search the Zephyr documentation for `DTS_ROOT`
+>
+> [Integrate modules in Zephyr build system] may also help.
 
 ## Configuration
 
-Here are some simple and general tips, take a look at the other READMEs to better configure the sample applications.
+As expected when developing with Zephyr:
 
-Configuration is done:
-
-- with the [Kconfig] options defined by each driver or library used: either set in `prj.conf` or extra configuration files, or using a Kconfig menu interface
-- [devicetree overlays] to connect the BME680/688 device to the target board
+- [Kconfig] is used to configure libraries and applications
+- [Devicetree] is used to set up the device driver and connect hardware
 
 ### Device driver
 
@@ -160,9 +150,9 @@ This `bosch,bme68x-sensor-api` driver permits to initialize the BME68X Sensor AP
 ``` c
 /* BME68X Sensor API I2C/SPI communication interface. */
 struct bme68x_dev bme68x_dev;
-/* Actual I2C/SPI device from the devicetree */
+/* Retrieve I2C/SPI device from the devicetree. */
 struct device const *dev = DEVICE_DT_GET_ONE(bosch_bme68x_sensor_api);
-/* Connect device to BME68X Sensor API communication interface. */
+/* Integrate device driver with the BME68X Sensor API communication interface. */
 bme68x_sensor_api_init(dev, &bme68x_dev);
 
 /* From now use the BME68X Sensor API as usual,
@@ -171,12 +161,12 @@ bme68x_sensor_api_init(dev, &bme68x_dev);
 bme68x_init(&bme68x_dev)
 ```
 
-The DTS files simply state that the BME680 and BME688 devices are sensors connected to I2C or SPI buses:
+The DTS files simply define the BME680 and BME688 devices as sensors connected to I2C or SPI buses:
 
 - I2C: [`bosch,bme68x-sensor-api-i2c.yaml`]
 - SPI: [`bosch,bme68x-sensor-api-spi.yaml`]
 
-Typically the connection takes place in some devicetree overlay file, e.g.:
+Typically the connection takes place in some [devicetree overlay] file, e.g.:
 
 ``` dts
 /* I2C bus the BME680/688 device is connected to. */
@@ -192,89 +182,71 @@ Typically the connection takes place in some devicetree overlay file, e.g.:
 
 > [!TIP]
 >
-> `BME68X_SENSOR_API_DRIVER` and `BME68X_SENSOR_API` are implied when an application devicetree contains compatible devices.
+> Driver (`BME68X_SENSOR_API_DRIVER`) and BME68X Sensor API (`BME68X_SENSOR_API`) are automatically enabled when a devicetree connects compatible devices, like in the example above.
 
 ### Libraries
 
-| Library          | Kconfig      | Enable                                        |
-|------------------|--------------|-----------------------------------------------|
-| [lib/bsec]       | `BSEC`       | Bosch Sensortec Environmental Cluster         |
-| [lib/bme68x-iaq] | `BME68X_IAQ` | Support library for BSEC IAQ                  |
-| [lib/bme68x-esp] | `BME68X_ESP` | Bluetooth Environmental Sensing Service (ESS) |
+| Library                 | Kconfig             | Enable                                        |
+|-------------------------|---------------------|-----------------------------------------------|
+| [lib/bsec]              | `BSEC`              | Bosch Sensortec Environmental Cluster         |
+| [lib/bme68x-iaq]        | `BME68X_IAQ`        | Support library for BSEC IAQ                  |
+| [lib/bme68x-esp]        | `BME68X_ESP`        | Bluetooth Environmental Sensing Service (ESS) |
 
-The above libraries define a number of options: the easiest way to get an idea of ​​what is configurable is to browse their respective Kconfig menus under `Modules → bme68x` using an interactive interface, e.g. `west build -t menuconfig`.
+The above libraries define a number of options: the easiest way to get an idea of ​​what is configurable is to browse their respective menus under `Modules → bme68x` using one of the various Kconfig user interfaces, e.g. `west build -t menuconfig`.
 
 ## Sample applications
 
-The necessary steps for building and running sample applications are nothing unusual:
+| Sample                | Application                                         |
+|-----------------------|-----------------------------------------------------|
+| [samples/bme68x-tphg] | Forced THPG measurements with the BME68X Sensor API |
+| [samples/bme68x-iaq]  | Index for Air Quality (IAQ) with BSEC               |
+| [samples/bme68x-esp]  | Environmental Sensing Service with BSEC             |
 
-- *connect* sensors to the [Devicetree], typically with [devicetree overlays]
-- review the Kconfig options that configure the application and the libraries it depends on; `west build -t menuconfig` is handy
-- build and run
-
-```
-$ cd bme68x-zephyr
-$ west build samples/bme68x-iaq
-$ west flash
-```
+Sample applications are included in the `samples` sub-directory of the module.
 
 Each application contains example configuration and overlay files for [nRF52840 DK]. Configuration for your board will probably differ, refer to Zephyr [Supported Boards] and your SoC documentation.
 
 > [!TIP]
 >
-> Consider trying the simpler [samples/bme68x-tphg] application first to test your
-> [communication interface](drivers/bme68x-sensor-api/README.md#compatible-devices) configuration.
+> If not comfortable with Zephyr configuration or Devicetree, consider the simple [samples/bme68x-tphg] application first to test your [communication interface](drivers/bme68x-sensor-api/README.md#compatible-devices) to the BME680/688 sensor.
 
 ## Quick Start Guide
 
-Assuming this `bme68x` module has been [installed as an external project](#external-project), and depending on your board, this brief guide may be sufficient to get the Index for Air Quality (IAQ) sample application ([samples/bme68x-iaq]) up and running *in five minutes*:
+For simplicity, this brief guide assumes a development environment managed by [West],
+installed as described in Zephyr [Getting Started Guide].
+Depending on your board, it may be sufficient to get the Index for Air Quality (IAQ) sample application ([samples/bme68x-iaq]) up and running *in five minutes*:
 
-- verify installation
-- connect a BME680/688 sensor to the devicetree
+- install this module
+- connect the BME680/688 sensor
 - configure the BSEC algorithm
 - build and run the application
 
-The application contains DTS overlay and configuration files for [nRF52840 DK]
-in [its boards directory](samples/bme68x-iaq/boards).
+> [!TIP]
+>
+> Once this works, you can try the [samples/bme68x-esp] application to add BLE connectivity.
 
-Once this works, you can try the [samples/bme68x-esp] application to add BLE connectivity.
+### Install this module
 
-### Verify installation
+Assuming `zephyr-project` represents your West workspace root, and the environment is correctly initialized (Python virtual environment, `ZEPHYR_BASE`, `ZEPHYR_TOOLCHAIN_VARIANT`, etc):
 
-This sample application depends on the BSEC library. If not already installed:
+1. copy this [bme68x.yaml](bme68x.yaml) manifest file to the `zephyr-project/zephyr/submanifests` directory
+2. install the module: `west update bme68x`
+3. accept [BSEC License Terms and Conditions] and install proprietary binaries: `west blobs fetch bme68x`
 
-- accept BSEC [License Terms and Conditions]
-- install BSEC static libraries with the [`west blobs`] command
+### Connect the sensor
 
-```
-$ west blobs fetch bme68x
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m3/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m33/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m33f/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m4/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/cortex-m4f/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32s2/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32s3/libalgobsec.a
-Fetching blob bme68x: /path/to/zephyr-project/modules/lib/bme68x/zephyr/blobs/bsec/esp32c3/libalgobsec.a
-```
-
-[License Terms and Conditions]: https://www.bosch-sensortec.com/media/boschsensortec/downloads/software/bme688_development_software/2023_04/license_terms_bme688_bme680_bsec.pdf
-
-### Connect sensor
-
-Connect the BME680/688 sensor, e.g. by adding a DTS overlay file to the `bme68x-zephyr/samples/bme68x-iaq/boards` directory.
+Connect the BME680/688 sensor by adding a DTS overlay file to the `samples/bme68x-iaq/boards` directory.
 
 For example, with:
 
 - an [Adafruit Feather ESP32S2] board
-- a BME680/688 sensor connected to I2C, with slave address `0x77`
+- a BME680 sensor connected to I2C, with slave address `0x77`
 
-We would add an `adafruit_feather_esp32s2.overlay` file with the content bellow:
+you could add an `adafruit_feather_esp32s2.overlay` file with the content bellow:
 
 ``` dts
 &i2c0 {
-    bme280: bme68X@77 {
+    bme680@77 {
         compatible = "bosch,bme68x-sensor-api";
         reg = <0x77>;
         power-domains = <&i2c_reg>;
@@ -284,15 +256,17 @@ We would add an `adafruit_feather_esp32s2.overlay` file with the content bellow:
 
 Refer to [drivers/bme68x-sensor-api] for details, especially for connecting SPI devices.
 
+The application contains example DTS overlays in [its boards directory](samples/bme68x-iaq/boards).
+
 ### Configure BSEC
 
-BSEC algorithm configuration includes:
+The BSEC algorithm configuration includes:
 
-- BME680/688 sensor's supply voltage: 3.3V or 1.8V
+- supply voltage for the BME680/688 sensor: 3.3V or 1.8V
 - desired BSEC calibration time: 4 or 28 days
 - BSEC sample rate: Low-Power (LP, 1/3 Hz) or Ultra-Low-Power (ULP, 1/300 Hz)
 
-These options are accessible via the Kconfig menu: `Modules → bme68x → [*] Support library for BSEC IAQ → IAQ configuration`.
+Options for predefined IAQ configurations are accessible via Kconfig (e.g. menu `Modules → bme68x → [*] Support library for BSEC IAQ → IAQ configuration`).
 
 > [!TIP]
 >
@@ -300,17 +274,21 @@ These options are accessible via the Kconfig menu: `Modules → bme68x → [*] S
 > - check that the voltage that your board supplies to the sensor is 3.3 V
 > - if so, simply continue with this configuration
 
-### Build and run
+### Build and run the application
 
-The application should build and run *out of the box* for the target CPU families bellow:
+The application should build *out of the box* for the MCU families bellow:
 
 - Cortex-M: M33, M33F, M4, M4F
 - ESP32: ESP32, ESP32S2, ESP32S3, ESP32C3
 
-```
-$ cd bme68x-zephyr
-$ west build samples/bme68x-iaq -t menuconfig
-$ west flash
+For other targets, or if the build fails with "Failed to guess BSEC target" or "BSEC blob not found", please refer to [lib/bsec].
+
+Apart from that, build and run as usual, e.g.:
+
+``` sh
+cd zephyr-project/modules/lib/bme68x
+west build samples/bme68x-iaq -b nrf52840dk/nrf52840
+west flash
 ```
 
 Console output:
@@ -348,9 +326,7 @@ Console output:
 [00:10:00.554,016] <inf> app: stabilization: finished, finished
 ```
 
-For other CPUs, or if the build fails with some "Failed to guess BSEC target" or "BSEC blob not found" message, refer to [lib/bsec].
-
-Once this works, refer to [lib/bme68x-iaq] to enable and configure BSEC state persistence to the per-device settings (Zephyr [Settings] subsystem).
+Once this works, you can try to enable and configure BSEC state persistence to per-device settings (Zephyr [Settings] subsystem). Please refer to [lib/bme68x-iaq].
 
 > [!TIP]
 >
@@ -369,6 +345,7 @@ Once this works, refer to [lib/bme68x-iaq] to enable and configure BSEC state pe
 > CONFIG_BME68X_IAQ_SETTINGS=y
 > ```
 
+
 ## Rationale
 
 Bosch Sensortec's BME680/688 devices are *sensors* for measuring ambient temperature, barometric pressure, relative humidity, and gas resistance (TPHG).
@@ -386,14 +363,14 @@ This approach has advantages: the application can get TPHG measurements without 
 But it also presents limitations that are difficult, if not impossible, to resolve when requiring finer control of sensors:
 
 - the application can't switch the device to the *parallel* mode supported by BME688 sensors
-- the application can't reconfigure sensors, nor use more than one heating profile
-- the application can't use more than one heating profile
+- the application can't reconfigure the device
+- the application is limited to one heating profile
 
 Examples that immediately come to mind include:
 
 - gas scanner support for [BME688] ([How to distinguish BME680 from BME688 in firmware])
 - integration with Bosch Sensortec Environmental Cluster (BSEC) for Index for Air Quality (IAQ) and gas detection
-- user initiated sensor configuration (e.g. with a Bluetooth smartphone)
+- user initiated sensor configuration (e.g. from a Bluetooth smartphone)
 
 My personal use case was simply to get IAQ estimates, out of curiosity: to do this, I first had to *reinvent the wheel*, from the Zephyr device driver layer to the BSEC library integration. Only after that I could consider writing a simple PoC application.
 
@@ -404,6 +381,8 @@ This isn't *rocket science*, but it could discourage Zephyr enthusiasts who have
 [BME680]: https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme680/
 [Environmental Sensing Service]: https://www.bluetooth.com/specifications/specs/environmental-sensing-service-1-0/
 [Environmental Sensing Profile]: https://www.bluetooth.com/specifications/specs/environmental-sensing-profile-1-0/
+
+[BSEC License Terms and Conditions]: https://www.bosch-sensortec.com/media/boschsensortec/downloads/software/bme688_development_software/2023_04/license_terms_bme688_bme680_bsec.pdf
 
 [`bosch,bme680`]: https://docs.zephyrproject.org/latest/build/dts/api/compatibles/bosch,bme680.html
 [Fetch and Get]: https://docs.zephyrproject.org/latest/hardware/peripherals/sensor/fetch_and_get.html#sensor-fetch-and-get
@@ -425,7 +404,7 @@ This isn't *rocket science*, but it could discourage Zephyr enthusiasts who have
 [Integrate modules in Zephyr build system]: https://docs.zephyrproject.org/latest/develop/modules.html#integrate-modules-in-zephyr-build-system
 [Kconfig]:https://docs.zephyrproject.org/latest/build/kconfig/index.html
 [Devicetree]: https://docs.zephyrproject.org/latest/build/dts/intro.html
-[devicetree overlays]: https://docs.zephyrproject.org/latest/build/dts/howtos.html#set-devicetree-overlays
+[devicetree overlay]: https://docs.zephyrproject.org/latest/build/dts/howtos.html#set-devicetree-overlays
 [Supported Boards]: https://docs.zephyrproject.org/latest/boards/index.html
 [nRF52840 DK]: https://docs.zephyrproject.org/latest/boards/nordic/nrf52840dk/doc/index.html
 [Adafruit Feather ESP32S2]: https://docs.zephyrproject.org/latest/boards/adafruit/feather_esp32s2/doc/adafruit_feather_esp32s2.html
