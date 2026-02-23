@@ -44,7 +44,7 @@ endfunction()
 
 # All ESP32.
 #
-# Set BSEC target for SOC_FAMILY_ESP32:
+# Set BSEC target for SOC_FAMILY_ESPRESSIF_ESP32:
 # - xtensa: ESP32, ESP32S2, ESP32S3
 # - riscv: ESP32C3
 function(set_bsec_target_esp32)
@@ -65,8 +65,10 @@ function(find_libalgobsec)
   set(bsec_target "")
   if (CONFIG_CPU_CORTEX)
     set_bsec_target_cortex()
-  elseif(CONFIG_SOC_FAMILY_ESP32)
+  elseif(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
     set_bsec_target_esp32()
+  else()
+    message(WARNING "MCU not supported or recognized")
   endif()
 
   if (bsec_target)

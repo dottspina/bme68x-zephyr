@@ -105,17 +105,17 @@ This Zephyr library is enabled with the [Kconfig] configuration option `BSEC`.
 
 By default, the build process ([CMakeLists.txt](CMakeLists.txt)) will try to identify and locate the appropriate BSEC target based on Kconfig symbols:
 
-| Target      | *Architecture* (Kconfig) | CPU (Kconfig)               |
-|-------------|--------------------------|-----------------------------|
-| cortex-m3   | `CPU_CORTEX=y`           | `CPU_CORTEX_M3=y`           |
-| cortex-m33  |                          | `CPU_CORTEX_M33=y`          |
-| cortex-m33f |                          | `CPU_CORTEX_M33=y`, `FPU=y` |
-| cortex-m4   |                          | `CPU_CORTEX_M4=y`           |
-| cortex-m4f  |                          | `CPU_CORTEX_M4=y`, `FPU=y`  |
-| esp32       | `SOC_FAMILY_ESP32=y`     | `SOC_SERIES_ESP32="y"`      |
-| esp32s2     |                          | `SOC_SERIES_ESP32S2="y"`    |
-| esp32s3     |                          | `SOC_SERIES_ESP32S3="y"`    |
-| esp32c3     |                          | `SOC_SERIES_ESP32C3="y"`    |
+| Target      | *Architecture* (Kconfig)       | CPU (Kconfig)               |
+|-------------|--------------------------------|-----------------------------|
+| cortex-m3   | `CPU_CORTEX=y`                 | `CPU_CORTEX_M3=y`           |
+| cortex-m33  |                                | `CPU_CORTEX_M33=y`          |
+| cortex-m33f |                                | `CPU_CORTEX_M33=y`, `FPU=y` |
+| cortex-m4   |                                | `CPU_CORTEX_M4=y`           |
+| cortex-m4f  |                                | `CPU_CORTEX_M4=y`, `FPU=y`  |
+| esp32       | `SOC_FAMILY_ESPRESSIF_ESP32=y` | `SOC_SERIES_ESP32="y"`      |
+| esp32s2     |                                | `SOC_SERIES_ESP32S2="y"`    |
+| esp32s3     |                                | `SOC_SERIES_ESP32S3="y"`    |
+| esp32c3     |                                | `SOC_SERIES_ESP32C3="y"`    |
 
 If the above fails or is not applicable, the build process also supports the CMake variable `LIBALGOBSEC` which allows to explicitly set the path to the target BSEC blob, e.g.:
 
