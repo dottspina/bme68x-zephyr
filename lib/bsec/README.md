@@ -15,31 +15,37 @@ See also:
 
 > [!IMPORTANT]
 >
-> BSEC is not available under an Open Source license: installation and use requires acceptance of these [License Terms and Conditions].
+> Different licenses apply to different components of the needed BSEC software:
+>
+> - the API headers and IAQ configuration examples are available under a BSD-3 Clause license as parts of the [BSEC Arduino Library]
+> - the binaries (static libraries) of the BSEC algorithm are licensed under the [License Terms and Conditions] for the use of Bosch Sensortec’s BME680/BME688/BME690 Software (here BSEC)
+>
+> BSEC software installation and use requires acceptance of both licenses.
 
 ## Installation
 
-BSEC is proprietary software protected by copyright and available only as statically linked libraries for target platforms (e.g. Cortex-M4 with GCC *linkage*).
+API headers and IAQ configurations are included with this Zephyr module repository.
 
+The BSEC algorithm is available only as binary blobs for selected target platforms (e.g. Cortex-M4 with GCC *linkage*).
 These binary blobs (aka *libalgobsec*) cannot be included in this repository and must be downloaded:
 
-- either from the [BME680 Product page]: supports more targets (e.g. IAR compiler), but the download process does not permit to automate installation
-- or from the [BSEC2 Arduino Library] GitHub: only GCC targets, download links for tagged releases are available; this is the preferred source
+- either from the [BME680 Software (BSEC)] download page: supports more targets (e.g. IAR toolchain, x32 and x64 architectures, DLL), but the download process does not permit to automate download and integration
+- or from the [BSEC Arduino Library] GitHub: only static libraries for various Cortex-M and ESP32 targets with GCC linkage, but download links for tagged releases are available; this is the source used for semi-automatic integration with the `west blobs` command
 
 > [!NOTE]
-> Although `bsec_get_version()` will answer `2.5.0.2` for both sources above, the binary blobs actually differ, as do the supported targets and how they are organized.
+> Although `bsec_get_version()` will answer `2.5.0.2` for both sources above, the binary blobs actually differ.
 >
-> Instructions bellow directly apply to, and are tested with, the BSEC2 Arduino Library *distribution*.
+> This integration with Zephyr is developed and tested with the BSEC Arduino Library *distribution*.
 
-[BME680 Product page]: https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme680/
-[BSEC2 Arduino Library]: https://github.com/boschsensortec/Bosch-BSEC2-Library
-[License Terms and Conditions]: https://www.bosch-sensortec.com/media/boschsensortec/downloads/software/bme688_development_software/2023_04/license_terms_bme688_bme680_bsec.pdf
+[BME680 Software (BSEC)]: https://www.bosch-sensortec.com/en/software-tools/software/bme680-software-bsec
+[BSEC Arduino Library]: https://github.com/boschsensortec/Bosch-BSEC2-Library
+[License Terms and Conditions]: /zephyr/blobs/bsec/20241219_clickthrough_license_terms_bsec_bme680_bme688_bme690.pdf
 [BSEC]: https://www.bosch-sensortec.com/software-tools/software/bme680-software-bsec/
 
 By default, the build system ([CMakeLists.txt](CMakeLists.txt)) will search for BSEC binaries where it would search for [binary blobs] coming with the `bme68x` Zephyr module:
 
-- in sub-directories of `zephyrproject/modules/lib/bme68x/zephyr/blobs` if installed as an *external project* of the West workspace at `zephyrproject`
-- in sub-directories of `bme68x-zephyr/zephyr/blobs` if installed as an *extra module* given to CMake, where `bme68x-zephyr` is a clone of this project
+- in sub-directories of `zephyrproject/modules/lib/bme68x/zephyr/blobs/bsec` if installed as an *external project* of the West workspace at `zephyrproject`
+- in sub-directories of `bme68x-zephyr/zephyr/blobs/bsec` if installed as an *extra module* given to CMake, where `bme68x-zephyr` is a clone of this project
 
 The different targets are identified by directory names:
 

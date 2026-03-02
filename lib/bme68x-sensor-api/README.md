@@ -1,6 +1,7 @@
 # `lib/bme68x-sensor-api` ─ BME68X Sensor API
 
 The [BME68X Sensor API] is an open source library provided by Bosch Sensortec, which covers configuration and control of BME680/688 sensors, as well as compensation of temperature, pressure, humidity and gas resistance values.
+It's distributed under the terms of the BSD-3 clause license. See [NOTICE](NOTICE) for the original copyright notice.
 
 See also:
 

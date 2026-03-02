@@ -1,6 +1,10 @@
-**/build/
-**/.cache/
-**/blobs/
+build/
+.cache/
+
+# Ignore BSEC2 target directories but track license file.
+/zephyr/blobs/bsec/*
+!/zephyr/blobs/bsec/20241219_clickthrough_license_terms_bsec_bme680_bme688_bme690.pdf
+
 /ext/
 /.vscode/
 /.project
