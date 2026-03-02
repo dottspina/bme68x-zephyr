@@ -10,3 +10,7 @@ build/
 /.project
 /.clangd
 
+# Python tooling.
+zbme68x.log
+.venv/
+__pycache__/
