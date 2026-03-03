@@ -1,4 +1,3 @@
 #include <stdint.h>
 
-extern const uint8_t bsec_config_iaq[2063];
-
+extern const uint8_t bsec_config_iaq[1943];

@@ -2,7 +2,7 @@
 
 Bosch Sensortec Environmental Cluster ([BSEC]) processes BME680/688 sensor inputs into virtual sensor outputs for Index for Air Quality (IAQ) or gas detection (BME688 only).
 
-This Zephyr library provides BSEC version 2.5.0.2.
+This Zephyr library provides BSEC version 2.6.1.0 (Bosch-BSEC2-Library release 1.10.2610).
 
 See also:
 
@@ -33,7 +33,8 @@ These binary blobs (aka *libalgobsec*) cannot be included in this repository and
 - or from the [BSEC Arduino Library] GitHub: only static libraries for various Cortex-M and ESP32 targets with GCC linkage, but download links for tagged releases are available; this is the source used for semi-automatic integration with the `west blobs` command
 
 > [!NOTE]
-> Although `bsec_get_version()` will answer `2.5.0.2` for both sources above, the binary blobs actually differ.
+>
+> Although `bsec_get_version()` will answer the same algorithm version for both sources above, the binary blobs may actually differ.
 >
 > This integration with Zephyr is developed and tested with the BSEC Arduino Library *distribution*.
 
