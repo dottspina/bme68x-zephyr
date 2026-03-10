@@ -6,6 +6,8 @@
 
 #include "bme68x_iaq.h"
 
+#include <math.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -216,6 +218,10 @@ static bsec_sensor_configuration_t const iaq_virt_sensors[] = {
 	},
 	{
 		.sensor_id = BSEC_OUTPUT_RAW_GAS,
+		.sample_rate = BME68X_IAQ_SAMPLE_RATE,
+	},
+	{
+		.sensor_id = BSEC_OUTPUT_COMPENSATED_GAS,
 		.sample_rate = BME68X_IAQ_SAMPLE_RATE,
 	},
 	{
@@ -616,6 +622,10 @@ void iaq_sample_set_outputs(int64_t ts_ns, bsec_output_t const *bsec_outputs, si
 			break;
 		case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY:
 			iaq_sample->humidity = bsec_outputs[i].signal;
+			break;
+		case BSEC_OUTPUT_COMPENSATED_GAS:
+			/* Compensated gas resistance is linearized to log scale. */
+			iaq_sample->gas_res = pow(10.0, bsec_outputs[i].signal);
 			break;
 		case BSEC_OUTPUT_IAQ:
 			iaq_sample->iaq = bsec_outputs[i].signal;

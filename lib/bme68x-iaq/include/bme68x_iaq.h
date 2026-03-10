@@ -62,6 +62,8 @@ struct bme68x_iaq_sample {
 	float temperature;
 	/** Sensor heat compensated relative humidity in %. */
 	float humidity;
+	/** Gas resistance compensated by temperature and humidity influences in ohm. */
+	float gas_res;
 	/** Indoor-air-quality estimate, [0-500] (from clean to heavily polluted air). */
 	float iaq;
 	/** IAQ estimate accuracy. */
