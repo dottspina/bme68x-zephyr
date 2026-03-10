@@ -47,7 +47,7 @@ This sample application relies on [drivers/bme68x-sensor-api] to communicate wit
 
 ### BSEC
 
-Refer to [lib/bme68x-iaq] to configure the BSEC algorithm and state persistence (see also  [`boards/nrf52840dk_nrf52840.conf`] for an example of enabling the [Settings] subsystem with an NVS backend). 
+Refer to [lib/bme68x-iaq] to configure the BSEC algorithm and state persistence (see also  [`boards/nrf52840dk_nrf52840.conf`] for an example of enabling the [Settings] subsystem with an NVS backend).
 
 [lib/bme68x-iaq]: /lib/bme68x-iaq
 [`boards/nrf52840dk_nrf52840.conf`]: boards/nrf52840dk_nrf52840.conf
@@ -125,3 +125,48 @@ Console output:
 > - or as CMake variable, e.g. `west build -- -DZEPHYR_EXTRA_MODULES=/path/to/bme68x-zephyr`
 
 [`CMakeLists.txt`]: CMakeLists.txt
+
+
+## Typical values
+
+Some typical values, given for guidance only.
+
+### Typical gas resistance values
+
+| Condition                | Gas Resistance (Ohms) |
+|--------------------------|-----------------------|
+| Clean air (good quality) | 50,000 or more        |
+| Moderate pollution       | 10,000 - 50,000       |
+| High pollution           | Below 10,000          |
+
+### Typical VOC levels
+
+| VOC Level Category | Concentration (ppm) | Description                                               |
+|--------------------|---------------------|-----------------------------------------------------------|
+| Acceptable         | 0.1 - 0.5           | Generally safe for indoor environments.                   |
+| Poor               | 0.66 - 2.2          | Indicates potential air quality issues.                   |
+| Unacceptable       | 2.2 - 5.5           | High levels that may cause health concerns.               |
+| Hazardous          | > 5.5               | Very high levels that can lead to serious health effects. |
+
+### Typical CO2 levels
+
+| Concentration (ppm) | Description                                                 |
+|---------------------|-------------------------------------------------------------|
+| 400 ppm             | Normal outdoor air                                          |
+| 400-1,000 ppm       | Typical CO2 levels found indoors                            |
+| 1,000-2,000 ppm     | Common complaints of drowsiness or poor air quality         |
+| 2,000-5,000 ppm     | Headaches, fatigue, increased heart rate, nausea, etc       |
+| > 50,000 ppm        | Toxicity due to oxygen deprivation occurs                   |
+| > 100,000 ppm       | Oxygen deprivation in seconds: convulsions, coma, and death |
+
+### IAQ index
+
+| IAQ index | Air quality         |
+|-----------|---------------------|
+| 0 - 50    | Excellent           |
+| 51 - 100  | Good                |
+| 101 - 150 | Lightly polluted    |
+| 151 - 200 | Moderately polluted |
+| 201 - 250 | Heavily polluted    |
+| 251 - 350 | Severely polluted   |
+| > 351     | Extremely polluted  |

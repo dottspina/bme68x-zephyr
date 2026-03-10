@@ -53,6 +53,12 @@ struct iaq_output {
 	 */
 	struct fixed_point raw_gas_res;
 	/*
+	 * Gas resistance measured by the BME680/688 compensated by
+	 * temperature and humidity influences in kOhm.
+	 * Precision 1 Ohm (3-digits remainder).
+	 */
+	struct fixed_point gas_res;
+	/*
 	 * Sensor heat compensated temperature in degrees Celsius.
 	 * Precision 1/100 degC (2-digits remainder).
 	 */
@@ -135,6 +141,7 @@ static void iaq_output_init(struct bme68x_iaq_sample const *iaq_sample,
 	fixed_point_init(iaq_sample->humidity, 100, &iaq_output->humidity);
 	/* Ohm to kOhm, Ohm precision. */
 	fixed_point_init(iaq_sample->raw_gas_res / 1000, 1000, &iaq_output->raw_gas_res);
+	fixed_point_init(iaq_sample->gas_res / 1000, 1000, &iaq_output->gas_res);
 	/* IAQ scaled to [0,500]. */
 	iaq_output->iaq = (uint16_t)iaq_sample->iaq;
 	iaq_output->iaq_accuracy = iaq_sample->iaq_accuracy;
@@ -164,16 +171,19 @@ void iaq_output_handler(struct bme68x_iaq_sample const *iaq_sample)
 	struct iaq_output iaq_output;
 	iaq_output_init(iaq_sample, &iaq_output);
 
-	LOG_INF("-- IAQ output signals (%d) --", iaq_sample->cnt_outputs);
-	LOG_INF("T:%d.%02u degC", iaq_output.raw_temperature.q, iaq_output.raw_temperature.r);
+	LOG_INF("-- IAQ output (%d signals) --", iaq_sample->cnt_outputs);
+	LOG_INF("T:%d.%02u degC (raw: %d.%02u)", iaq_output.temperature.q, iaq_output.temperature.r,
+		iaq_output.raw_temperature.q, iaq_output.raw_temperature.r);
 	LOG_INF("P:%d.%03u kPa", iaq_output.raw_pressure.q, iaq_output.raw_pressure.r);
-	LOG_INF("H:%d.%02u %%", iaq_output.raw_humidity.q, iaq_output.raw_humidity.r);
-	LOG_INF("G:%d.%03u kOhm", iaq_output.raw_gas_res.q, iaq_output.raw_gas_res.r);
+	LOG_INF("H:%d.%02u %% (raw: %d.%02u)", iaq_output.humidity.q, iaq_output.humidity.r,
+		iaq_output.raw_humidity.q, iaq_output.raw_humidity.r);
+	LOG_INF("G:%d.%03u kOhm (raw: %d.%03u kOhm)", iaq_output.gas_res.q, iaq_output.gas_res.r,
+		iaq_output.raw_gas_res.q, iaq_output.raw_gas_res.r);
 	LOG_INF("IAQ:%u (%s)", iaq_output.iaq, accuracy2str[iaq_output.iaq_accuracy]);
 	LOG_INF("CO2:%u ppm (%s)", iaq_output.co2_equivalent,
 		accuracy2str[iaq_output.co2_accuracy]);
 	LOG_INF("VOC:%d.%02u ppm (%s)", iaq_output.voc_equivalent.q, iaq_output.voc_equivalent.r,
 		accuracy2str[iaq_output.voc_accuracy]);
-	LOG_INF("stabilization: %s, %s", stab2str[iaq_output.stab_status],
+	LOG_INF("stabilization:%s, run-in:%s", stab2str[iaq_output.stab_status],
 		stab2str[iaq_output.run_status]);
 }
