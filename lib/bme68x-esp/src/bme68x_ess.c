@@ -98,16 +98,16 @@ struct ess_characteristic {
 	 */
 	struct k_timer trigger_timer;
 
-	/* Represent the number of received GATT requests writing to
-	 * this characteristic's ES Trigger Setting, including:
-	 * - the requests already completed
-	 * - plus possibly an ongoing request
+	/* Seqlock for synchronizing read/write operations on the ES trigger setting.
 	 *
-	 * Allows the thread which updates the ESS Characteristic values to know
-	 * whether it has been preempted by a thread that invalidated its use
-	 * of the ES Trigger Setting.
+	 * Single writer, multiple readers:
+	 * - Writer (acquire-release): increments sequence to odd value before updating the trigger
+	 *   setting, increment to even value once the update is complete.
+	 * - Readers (acquire): reject trigger setting value if the writer has started or finished
+	 *   (or both) an update concurrently with the read operation, retry until reader
+	 *   and writer don't interleave.
 	 */
-	atomic_t trigger_setting_cnt;
+	atomic_t trigger_setting_seq;
 };
 
 /* GATT read ESS characteristic's value (16-bit integer). */
@@ -494,10 +494,10 @@ static ssize_t es_trigger_setting_gatt_write_cb(struct bt_conn *conn,
 		ess_chrc_trigger_timer_resume(chrc, false);
 	}
 
-	/* Tell any preempted reader thread that we're updating
-	 * the ES Trigger Setting descriptor.
+	/* Beginning of critical section, increment seqlock to odd value.
+	 * Write in progress.
 	 */
-	(void)atomic_inc(&chrc->trigger_setting_cnt);
+	(void)atomic_inc(&chrc->trigger_setting_seq);
 
 	trigger_setting->condition = condition;
 	uint8_t const *operand = pdu + 1;
@@ -552,6 +552,11 @@ static ssize_t es_trigger_setting_gatt_write_cb(struct bt_conn *conn,
 		;
 	}
 
+	/* End of critical section, increment seqlock to even value.
+	 * Write complete.
+	 */
+	(void)atomic_inc(&chrc->trigger_setting_seq);
+
 	if (trigger_setting->condition == ES_TRIGGER_FIXED_TIME
 	    && (atomic_get(&chrc->ccc_notify) != 0)) {
 		/* Resume notifications with new fixed interval. */
@@ -581,12 +586,12 @@ static void ess_chrc_value_update_notify(struct ess_characteristic *chrc, void *
 	 */
 	enum es_trigger_setting_condition condition;
 	union es_trigger_setting_operand operand;
-	atomic_val_t writes_cnt;
+	atomic_val_t seq;
 	do {
-		writes_cnt = atomic_get(&chrc->trigger_setting_cnt);
+		seq = atomic_get(&chrc->trigger_setting_seq);
 		condition = chrc->trigger_setting.condition;
 		operand = chrc->trigger_setting.operand;
-	} while (atomic_get(&chrc->trigger_setting_cnt) != writes_cnt);
+	} while ((seq & 1) || atomic_get(&chrc->trigger_setting_seq) != seq);
 
 	/* Non-zero only for the ES_TRIGGER_GTE_TIME condition. */
 	uint32_t timesptamp = 0;
